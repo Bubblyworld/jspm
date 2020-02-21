@@ -1,0 +1,40 @@
+{
+  "name": "jspm",
+  "description": "Browser package management",
+  "license": "Apache-2.0",
+  "version": "3.0.0-beta",
+  "scripts": {
+    "build-browser": "tsc -p .",
+    "build-node": "ncc build -t -m src/node.js -e sver -e es-module-lexer",
+    "watch-build-node": "ncc build -t -m src/node.js -s -e sver -e es-module-lexer -w",
+    "build": "npm run build-node && npm run build-browser",
+    "test": "npm run build && echo '>>>> Open: http://localhost:8080/test/test.html' && http-server",
+    "generate-maps": "node test/generate-maps.mjs"
+  },
+  "bin": {
+    "jspm": "dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "browser": "./lib/jspm-browser.js",
+  "dependencies": {
+    "@types/ora": "^3.2.0",
+    "es-module-lexer": "^0.3.17",
+    "sver": "^1.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "13",
+    "@zeit/ncc": "^0.21.1",
+    "chalk": "^3.0.0",
+    "http-server": "^0.12.1",
+    "make-fetch-happen": "^8.0.1",
+    "mocha": "^4.0.1",
+    "node-fetch": "^2.6.0",
+    "ora": "^4.0.3",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.8.0-beta"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ]
+}
