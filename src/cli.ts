@@ -396,7 +396,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]) {
 
         const outputPreloads: SrcScript[] = await Promise.all(sortedStatic.map(async dep => ({
           type: moduleType,
-          src: dep,
+          src: !dep.startsWith('https://') && outMapFile ? path.relative(outMapFile, dep) : dep,
           integrity: opts.noIntegrity ? undefined : await getIntegrity(dep.startsWith('https://') ? dep : pathToFileURL(path.resolve(opts.relative || process.cwd(), dep))),
           crossorigin: !opts.noCrossorigin && (dep.startsWith(systemCdnUrl) || dep.startsWith(esmCdnUrl)) ? true : undefined,
           jspmCast: !dep.startsWith(systemCdnUrl) && !dep.startsWith(esmCdnUrl)
