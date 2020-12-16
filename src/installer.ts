@@ -1,10 +1,11 @@
 import sver from 'sver';
+import chalk from 'chalk';
 const { Semver, SemverRange } = sver;
-import { TraceMap, ImportMap, TraceOptions } from './tracemap';
-import { isPlain, baseUrl, importedFrom, isURL, JspmError, jsonParseStyled, jsonStringifyStyled } from './utils';
-import { fetch } from './fetch';
-import { log } from './log';
-import { ExactPackage, PackageConfig, PackageInstall, PackageTarget, pkgToUrl, ResolutionMap, resolutionsToImportMap, importMapToResolutions, pkgToStr, parsePkg, esmCdnUrl, parseCdnPkg, getMapMatch, getScopeMatches, PackageInstallRange, analyze, getExportsTarget, pkgToLookupUrl, matchesTarget, nicePkgStr, getPackageBase, exists, derivePackageName, newPackageTarget, InstallTarget, parsePackageTarget, getMapResolved } from './installtree';
+import { TraceMap, ImportMap, TraceOptions } from './tracemap.ts';
+import { isPlain, baseUrl, importedFrom, isURL, JspmError, jsonParseStyled, jsonStringifyStyled } from './utils.ts';
+import { fetch } from './fetch.ts';
+import { log } from './log.ts';
+import { ExactPackage, PackageConfig, PackageInstall, PackageTarget, pkgToUrl, ResolutionMap, resolutionsToImportMap, importMapToResolutions, pkgToStr, parsePkg, esmCdnUrl, parseCdnPkg, getMapMatch, getScopeMatches, PackageInstallRange, analyze, getExportsTarget, pkgToLookupUrl, matchesTarget, nicePkgStr, getPackageBase, exists, derivePackageName, newPackageTarget, InstallTarget, parsePackageTarget, getMapResolved } from './installtree.ts';
 import { builtinModules } from 'module';
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
