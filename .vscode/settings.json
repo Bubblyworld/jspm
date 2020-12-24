@@ -1,0 +1,8 @@
+// .vscode/settings.json
+{
+  "deno.enable": true,
+  "deno.import_map": "./jspm.deno.importmap",
+  "deno.import_intellisense_origins": {
+    "https://deno.land": true
+  }
+}

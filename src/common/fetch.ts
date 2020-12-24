@@ -1,6 +1,10 @@
-import { version } from './version.js';
+import { version } from '../version.ts';
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
+
+declare global {
+  var process: any;
+}
 
 let _fetch: typeof fetch;
 let clearCache: () => void;
@@ -35,11 +39,11 @@ else {
 }
 
 const __fetch = _fetch;
-_fetch = async function (url, ...args) {
+_fetch = async function (url: URL, ...args: any[]) {
   const urlString = url.toString();
   if (urlString.startsWith('file:') || urlString.startsWith('data:') || urlString.startsWith('node:')) {
     try {
-      let source;
+      let source: string;
       if (urlString.startsWith('file:')) {
         source = await readFile(fileURLToPath(urlString));
       }
@@ -65,6 +69,27 @@ _fetch = async function (url, ...args) {
       if (e.code === 'ENOENT')
         return { status: 404, statusText: e.toString() };
       return { status: 500, statusText: e.toString() };
+    }
+  }
+  if (typeof Deno !== 'undefined') {
+    const { cache } = await import('../../../sandbox/cache/mod.ts');
+    try {
+      const file = await cache(urlString);
+      return {
+        status: 200,
+        async text () {
+          return (await Deno.readTextFile(file.path)).toString();
+        },
+        async json () {
+          return JSON.parse((await Deno.readTextFile(file.path)).toString());
+        }
+      };
+    }
+    catch (e) {
+      if (e.name === 'CacheError' && e.message.indexOf('Not Found !== -1')) {
+        return { status: 404, statusText: e.toString() };
+      }
+      throw e;
     }
   }
   return __fetch(url, ...args);
