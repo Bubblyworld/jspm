@@ -72,7 +72,7 @@ _fetch = async function (url: URL, ...args: any[]) {
     }
   }
   if (typeof Deno !== 'undefined') {
-    const { cache } = await import('../../../sandbox/cache/mod.ts');
+    const { cache } = await import('../cache/mod.ts');
     try {
       const file = await cache(urlString);
       return {

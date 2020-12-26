@@ -1,0 +1,51 @@
+{
+  "imports": {
+    "@iarna/toml": "https://ga.jspm.io/npm:@iarna/toml@3.0.0/toml.js",
+    "ansi-styles": "https://ga.jspm.io/npm:ansi-styles@4.3.0/index.js",
+    "buffer": "./core/dist/nodelibs-deno/buffer.js",
+    "chalk": "https://ga.jspm.io/npm:chalk@4.1.0/source/index.js",
+    "color-convert": "https://ga.jspm.io/npm:color-convert@2.0.1/index.js",
+    "color-name": "https://ga.jspm.io/npm:color-name@1.1.4/index.js",
+    "crypto": "./core/dist/nodelibs-deno/crypto.js",
+    "es-module-lexer": "https://ga.jspm.io/npm:es-module-lexer@0.3.26/dist/lexer.cjs",
+    "fs": "./core/dist/nodelibs-deno/fs.js",
+    "fs/promises": "./core/dist/nodelibs-deno/fs-promises.js",
+    "module": "./core/dist/nodelibs/module.js",
+    "os": "./core/dist/nodelibs-deno/os.js",
+    "path": "./core/dist/nodelibs/path.js",
+    "process": "./core/dist/nodelibs-deno/process.js",
+    "semver": "https://ga.jspm.io/npm:semver@6.3.0/semver.js",
+    "stream": "./core/dist/nodelibs/stream.js",
+    "supports-color": "https://ga.jspm.io/npm:supports-color@7.2.0/browser.js",
+    "sver": "https://ga.jspm.io/npm:sver@1.8.3/sver.js",
+    "sver/convert-range": "https://ga.jspm.io/npm:sver@1.8.3/convert-range.js",
+    "url": "./core/dist/nodelibs/url.js"
+  },
+  "scopes": {
+    "../": {
+      "@iarna/toml": "https://ga.jspm.io/npm:@iarna/toml@3.0.0/toml.js",
+      "chalk": "https://ga.jspm.io/npm:chalk@4.1.0/source/index.js",
+      "crypto": "./core/dist/nodelibs-deno/crypto.js",
+      "es-module-lexer": "https://ga.jspm.io/npm:es-module-lexer@0.3.26/dist/lexer.cjs",
+      "fs": "./core/dist/nodelibs-deno/fs.js",
+      "fs/promises": "./core/dist/nodelibs-deno/fs-promises.js",
+      "module": "./core/dist/nodelibs/module.js",
+      "os": "./core/dist/nodelibs-deno/os.js",
+      "path": "./core/dist/nodelibs/path.js",
+      "process": "./core/dist/nodelibs-deno/process.js",
+      "sver": "https://ga.jspm.io/npm:sver@1.8.3/sver.js",
+      "sver/convert-range": "https://ga.jspm.io/npm:sver@1.8.3/convert-range.js",
+      "url": "./core/dist/nodelibs/url.js"
+    },
+    "https://ga.jspm.io/": {
+      "ansi-styles": "https://ga.jspm.io/npm:ansi-styles@4.3.0/index.js",
+      "buffer": "./core/dist/nodelibs-deno/buffer.js",
+      "color-convert": "https://ga.jspm.io/npm:color-convert@2.0.1/index.js",
+      "color-name": "https://ga.jspm.io/npm:color-name@1.1.4/index.js",
+      "process": "./core/dist/nodelibs-deno/process.js",
+      "semver": "https://ga.jspm.io/npm:semver@6.3.0/semver.js",
+      "stream": "./core/dist/nodelibs/stream.js",
+      "supports-color": "https://ga.jspm.io/npm:supports-color@7.2.0/browser.js"
+    }
+  }
+}
