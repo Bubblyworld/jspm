@@ -5,10 +5,11 @@ import { JspmError } from "./common/err.ts";
 import { version } from "./version.ts";
 import { startSpinnerLog } from "./cli/spinner.ts";
 import { fromCamelCase, readFlags } from "./cli/flags.ts";
-import { TraceMapOptions } from "./tracemap/tracemap.ts";
+import type { TraceMapOptions } from "./tracemap/tracemap.ts";
 import process from 'process';
-import { indent, printFrame } from './cli/format.ts';
+import { indent, printFrame, indentGraph } from './cli/format.ts';
 import { writeFileSync, readFileSync } from 'fs';
+import type { ExportsTarget } from './install/package.ts';
 
 export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<number> {
   let spinner;
@@ -137,6 +138,56 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         break;
       }
 
+      case 'ls':
+      case 'list':
+        try {
+          const { args } = readFlags(rawArgs);
+          
+          if (!args.length)
+            throw new JspmError('No module path provided to list');
+          if (args.length > 1)
+            throw new JspmError('Only one module must be passed to list');
+
+          const { list } = await import ('./cmd/list.ts');
+          const { resolved, exports } = await list(args[0]);
+
+          console.log(resolved);
+          const padding = Math.min(Math.max(<number>Object.keys(exports).map(key => key.length).sort((a, b) => a > b ? 1 : -1).pop() + 2, 20), 80);
+          for (const key of Object.keys(exports)) {
+            const value = exports[key];
+            if (typeof value === 'string') {
+              console.log(key + value.padStart(padding - key.length + value.length, ' '));
+            }
+            else if (value !== null) {
+              let depth = 0;
+              function logNestedObj (obj: Record<string, any>): string[] {
+                depth += 2;
+                const curDepth = depth;
+                const lines: string[] = [];
+                for (const key of Object.keys(obj)) {
+                  const value = obj[key];
+                  if (typeof value === 'string') {
+                    lines.push(chalk.black.bold(key) + value.padStart(padding - key.length + value.length - curDepth, ' '));
+                  }
+                  else {
+                    lines.push(key);
+                    for (const line of logNestedObj(value))
+                      lines.push(line);
+                  }
+                }
+                return indentGraph(lines);
+              }
+              console.log(key + '\n' + logNestedObj(value).join('\n'));
+            }
+          }
+        }
+        catch (e) {
+          if (typeof e === 'string')
+            throw `${chalk.bold.red('err')}  ${e}`;
+          throw e;
+        }
+        break;    
+
       case 'rem': {
         const { args } = readFlags(rawArgs, {});
         const { rem } = await import('./cmd/rem.ts');
@@ -253,7 +304,7 @@ const help: Record<string, [string, string] | [string, string, string]> = {
   
     ${indent(printFrame(JSON.stringify({ dependencies: {}}, null, 2)), '    ')}
     
-    > jspm add react@16
+    $ jspm add react@16
 
     package.json file after add:
 
@@ -322,6 +373,33 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     For more information on how module resolution works and the way conditional
     environment resolution applies, see the JSPM module resolution guide at
     https://jspm.org/cli/resolution`
+  ],
+
+  'ls': [
+    'jspm ls <package target>',
+    'List the exports of a package', `
+    jspm ls <package target>[/subpath]
+
+    Resolves the package target to an exact version, and lists the "exports"
+    field exported subpaths and resolutions for a package, optionally filtered
+    to specific exports subpaths.
+
+    For more information on the package "exports" field, see
+    https://jspm.org/cli#package-exports.
+
+  ${chalk.bold('Example:')}
+
+    $ jspm ls preact@10/compat
+
+    > npm:preact@10.5.7
+    > ./compat
+    > ├╴browser           ./compat/dist/compat.module.js
+    > ├╴umd               ./compat/dist/compat.umd.js
+    > ├╴require           ./compat/dist/compat.js
+    > └╴import            ./compat/dist/compat.mjs
+    > ./compat/server
+    > └╴require           ./compat/server.js
+    `
   ],
 
   'rem': [

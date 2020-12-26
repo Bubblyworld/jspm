@@ -80,13 +80,16 @@ export function isPackageTarget (targetStr: string): boolean {
   return true;
 }
 
-export function pkgUrlToNiceString (pkgUrl: string, cdnUrls: string[]) {
+export function pkgUrlToNiceString (pkgUrl: string, cdnUrls: string[] = ['https://ga.jspm.io/', 'https://system.ga.jspm.io/']) {
   for (const url of cdnUrls) {
     if (pkgUrl.startsWith(url))
       return decodeURIComponent(pkgUrl.slice(url.length));
   }
   if (pkgUrl.startsWith('file:')) {
-    return path.relative(process.cwd(), fileURLToPath(pkgUrl));
+    let relPath = path.relative(process.cwd(), fileURLToPath(pkgUrl));
+    if (relPath[0] !== '.')
+      relPath = './' + relPath;
+    return relPath;
   }
   return pkgUrl;
 }
@@ -159,7 +162,7 @@ export function pkgToUrl (pkg: ExactPackage, cdnUrl: string) {
   return cdnUrl + pkgToStr(pkg) + '/';
 }
 
-function pkgToStr (pkg: ExactPackage) {
+export function pkgToStr (pkg: ExactPackage) {
   return `${pkg.registry ? pkg.registry + ':' : ''}${pkg.name}${pkg.version ? '@' + pkg.version : ''}`;
 }
 

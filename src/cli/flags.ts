@@ -16,7 +16,7 @@ export function fromCamelCase (name: string) {
   return outName;
 }
 
-export function readFlags (rawArgs: string[], { boolFlags = [], strFlags = [], arrFlags = [], aliases = {} }: { boolFlags?: string[], strFlags?: string[], arrFlags?: string[], aliases?: Record<string, string>, err?: string }) {
+export function readFlags (rawArgs: string[], { boolFlags = [], strFlags = [], arrFlags = [], aliases = {} }: { boolFlags?: string[], strFlags?: string[], arrFlags?: string[], aliases?: Record<string, string> } = {}) {
   const args: string[] = [], opts: Record<string, string | string[] | boolean> = {};
   let readArg: string | null = null, maybeBool: any = false;
   for (const arg of rawArgs) {
