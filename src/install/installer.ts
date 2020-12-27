@@ -48,7 +48,7 @@ export class Installer {
   installing = false;
   newInstalls = false;
   currentInstall = Promise.resolve();
-  stdlibTarget: InstallTarget = new URL('../../../core/dist', import.meta.url);
+  stdlibTarget: InstallTarget = new URL('../../core/dist', import.meta.url);
   installBaseUrl: string;
   lockfilePath: string;
   cdnUrl = 'https://ga.jspm.io/';

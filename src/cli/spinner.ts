@@ -19,16 +19,16 @@ function isCygwin () {
 }
 
 export async function startSpinnerLog (log: boolean | string) {
-  let ora;
-  if (typeof Deno !== 'undefined') {
-    ({ wait: ora } = await import('https://deno.land/x/wait/mod.ts'));
-  }
-  else {
-    const oraSpecifier = 'ora';
-    ({ default: ora  } = await import(oraSpecifier));
-  }
   let spinner;
   if (!log) {
+    let ora;
+    if (typeof Deno !== 'undefined') {
+      ({ wait: ora } = await import('https://deno.land/x/wait/mod.ts'));
+    }
+    else {
+      const oraSpecifier = 'ora';
+      ({ default: ora  } = await import(oraSpecifier));
+    }
     spinner = ora({
       color: 'yellow',
       spinner: {

@@ -194,10 +194,10 @@ export default class TraceMap {
             if (pkgName[0] === '_' || existingBuiltins.has(pkgName) || deps.includes(pkgName))
               continue;
             const resolution = await this.installer!.install(pkgName, this.pjsonBase!.href);
-            this.addAllPkgMappings(pkgName, resolution, null);
+            this.addAllPkgMappings(pkgName, resolution, this.env, null);
           }
           await Promise.all(installs.map(async ([name, pkgUrl]) => {
-            await this.addAllPkgMappings(name, this.installer!.installs[pkgUrl][name], pkgUrl === this.mapBase!.href ? null : pkgUrl);
+            await this.addAllPkgMappings(name, this.installer!.installs[pkgUrl][name], this.env, pkgUrl === this.mapBase!.href ? null : pkgUrl);
           }));
         }
       }
@@ -212,9 +212,9 @@ export default class TraceMap {
     return installed.slice(0, -1);
   }
 
-  async addAllPkgMappings (name: string, pkgUrl: string, parentPkgUrl: string | null) {
+  async addAllPkgMappings (name: string, pkgUrl: string, env: string[], parentPkgUrl: string | null) {
     const [url, subpathFilter] = pkgUrl.split('|');
-    const exports = await resolver.resolveExports(url + (url.endsWith('/') ? '' : '/'), this.env, subpathFilter);
+    const exports = await resolver.resolveExports(url + (url.endsWith('/') ? '' : '/'), env, subpathFilter);
     for (const key of Object.keys(exports)) {
       if (key.endsWith('!cjs'))
         continue;
@@ -226,7 +226,7 @@ export default class TraceMap {
     }
   }
 
-  async trace (specifier: string, parentUrl: URL = this.mapBase): Promise<string> {
+  async trace (specifier: string, parentUrl: URL = this.mapBase, env = this.env): Promise<string> {
     const parentPkgUrl = await resolver.getPackageBase(parentUrl.href);
     if (!parentPkgUrl)
       throwInternalError();
@@ -238,7 +238,7 @@ export default class TraceMap {
       if (resolvedUrl.protocol !== 'file:' && resolvedUrl.protocol !== 'https:' && resolvedUrl.protocol !== 'http:' && resolvedUrl.protocol !== 'node:' && resolvedUrl.protocol !== 'data:')
         throw new JspmError(`Found unexpected protocol ${resolvedUrl.protocol}${importedFrom(parentUrl)}`);
       log('trace', `${specifier} ${parentUrl.href} -> ${resolvedUrl}`);
-      await this.traceUrl(resolvedUrl.href, parentUrl);
+      await this.traceUrl(resolvedUrl.href, parentUrl, env);
       return resolvedUrl.href;
     }
   
@@ -255,7 +255,7 @@ export default class TraceMap {
         if (mapMatch) {
           const resolved = new URL(this.map.scopes[scope][mapMatch] + specifier.slice(mapMatch.length), this.map.baseUrl).href;
           log('trace', `${specifier} ${parentUrl.href} -> ${resolved}`);
-          await this.traceUrl(resolved, parentUrl);
+          await this.traceUrl(resolved, parentUrl, env);
           return resolved;
         }
       }
@@ -269,13 +269,9 @@ export default class TraceMap {
       const userImportsResolved = userImportsMatch ? new URL(imports[userImportsMatch] + specifier.slice(userImportsMatch.length), this.map.baseUrl).href : null;
       if (userImportsResolved) {
         log('trace', `${specifier} ${parentUrl.href} -> ${userImportsResolved}`);
-        await this.traceUrl(userImportsResolved, parentUrl);
+        await this.traceUrl(userImportsResolved, parentUrl, env);
         return userImportsResolved;
       }
-    }
-
-    if (!this.opts.install) {
-
     }
 
     const installed = !this.opts.install ? this.installer?.installs[parentPkgUrl]?.[pkgName] : await this.installer?.install(pkgName, parentPkgUrl, parentUrl.href);
@@ -290,7 +286,7 @@ export default class TraceMap {
       if (match) {
         const resolved = new URL(exports[match] + subpath.slice(match.length), pkgUrl).href;
         log('trace', `${specifier} ${parentUrl.href} -> ${resolved}`);
-        await this.traceUrl(resolved, parentUrl);
+        await this.traceUrl(resolved, parentUrl, env);
         return resolved;
       }
     }
@@ -300,14 +296,14 @@ export default class TraceMap {
     const userImportsResolved = userImportsMatch ? new URL(this.map.imports[userImportsMatch] + specifier.slice(userImportsMatch.length), this.map.baseUrl).href : null;
     if (userImportsResolved) {
       log('trace', `${specifier} ${parentUrl.href} -> ${userImportsResolved}`);
-      await this.traceUrl(userImportsResolved, parentUrl);
+      await this.traceUrl(userImportsResolved, parentUrl, env);
       return userImportsResolved;
     }
 
     throw new JspmError(`No resolution in map for ${specifier}${importedFrom(parentUrl)}`);
   }
 
-  private async traceUrl (resolvedUrl: string, parentUrl: URL): Promise<void> {
+  private async traceUrl (resolvedUrl: string, parentUrl: URL, env: string[]): Promise<void> {
     if (resolvedUrl in this.tracedUrls) return;
     if (resolvedUrl.endsWith('/'))
       throw new JspmError(`Trailing "/" installs not yet supported installing ${resolvedUrl} for ${parentUrl.href}`);
@@ -334,7 +330,7 @@ export default class TraceMap {
     }
     const resolvedUrlObj = new URL(resolvedUrl);
     await Promise.all(allDeps.map(async dep => {
-      const resolvedUrl = await this.trace(dep, resolvedUrlObj);
+      const resolvedUrl = await this.trace(dep, resolvedUrlObj, env);
       if (deps.includes(dep))
         traceEntry.deps[dep] = resolvedUrl;
       if (dynamicDeps.includes(dep))

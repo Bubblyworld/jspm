@@ -9,7 +9,6 @@ import type { TraceMapOptions } from "./tracemap/tracemap.ts";
 import process from 'process';
 import { indent, printFrame, indentGraph } from './cli/format.ts';
 import { writeFileSync, readFileSync } from 'fs';
-import type { ExportsTarget } from './install/package.ts';
 
 export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<number> {
   let spinner;
@@ -19,6 +18,24 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
     cmd = 'help';
   }
 
+  if (cmd && rawArgs.indexOf('--offline') !== -1 || rawArgs.indexOf('-z') !== -1) {
+    rawArgs.splice(rawArgs.findIndex(flag => flag === '--offline' || flag === '-z'), 1);
+    const { setOffline } = await import('./install/resolver.ts');
+    setOffline(true);
+  }
+
+  let log: string | boolean = false;
+  if (cmd && rawArgs.some(arg => arg === '--log' || arg.startsWith('--log='))) {
+    const index = rawArgs.findIndex(arg => arg === '--log' || arg.startsWith('--log='));
+    if (rawArgs[index].length > 5) {
+      log = rawArgs[index].slice(6);
+    }
+    else {
+      log = true;
+    }
+    rawArgs.splice(index, 1);
+  }
+
   try {
     switch (cmd) {
       case 'add': {
@@ -26,7 +43,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           boolFlags: ['log', 'dev', 'peer', 'optional'],
           strFlags: ['log']
         });
-        spinner = await startSpinnerLog(opts.log as string | boolean);
+        spinner = await startSpinnerLog(log);
         spinner.text = `Adding ${args.join(', ').slice(0, process.stdout.columns - 21)}...`;
         const { add } = await import('./cmd/add.ts');
         if (opts.dev)
@@ -46,6 +63,13 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         break;
       }
 
+      case 'cc': {
+        if (rawArgs.length)
+          throw new JspmError(`jspm cc does not take any arguments.`);
+
+        console.log(`${chalk.bold.yellow('warm')} TODO: jspm cache clear currently unimplemented.`);
+      }
+
       case 'deno': {
         const execArgIndex = rawArgs.findIndex(x => x[0] !== '-');
         if (execArgIndex === -1)
@@ -60,7 +84,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload' }
         });
 
-        opts.env = ['node', 'browser', 'deno'];
+        opts.env = ['deno', 'node'];
         if (opts.production)
           opts.env.push('production');
         else
@@ -81,39 +105,32 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       }
 
       case 'help': {
-        const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['commands'],
-          aliases: { c: 'commands' }
-        });
+        const { args, opts } = readFlags(rawArgs);
         if (args.length > 1)
           throw new JspmError(`jspm help only takes a single command, try "jspm help ${args[0]}".`);
-        if (args.length === 0) {
-          console.log(usage(opts.commands as boolean | undefined));
-        }
-        else {
-          if (opts.commands as boolean | undefined)
-            throw new JspmError(`The --commands flag does not apply to specific command help. Try just "jspm help --commands".`);
+        if (args.length === 0)
+          console.log(usage());
+        else
           console.log(cmdHelp(args[0]));
-        }
         break;
       }
 
       case 'link': {
         const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['log', 'deno', 'production', 'node', 'install'],
+          boolFlags: ['log', 'browser', 'production', 'node'],
           strFlags: ['log', 'out'],
           arrFlags: ['env'],
-          aliases: { 'o': 'out', 'd': 'deno', 'p': 'production', 'i': 'install' }
+          aliases: { 'o': 'out', 'b': 'browser', 'p': 'production' }
         });
 
-        opts.env = [...opts.env as string[] || [], ...opts.deno ? ['node', 'browser', 'deno'] : opts.node ? ['node'] : ['browser']];
+        opts.env = [...opts.env as string[] || [], ...opts.browser ? ['browser'] : opts.node ? ['node'] : ['deno', 'node']];
 
         if (opts.production)
           opts.env.push('production');
         else
           opts.env.push('development');
 
-        spinner = await startSpinnerLog(opts.log as string | boolean);
+        spinner = await startSpinnerLog(log);
         spinner.text = `Linking for ${opts.env.join(', ')}...`;
         const { link } = await import('./cmd/link.ts');
         let { changed, map } = await link(args, opts as TraceMapOptions);
@@ -139,9 +156,8 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       }
 
       case 'ls':
-      case 'list':
         try {
-          const { args } = readFlags(rawArgs);
+          const { args, opts } = readFlags(rawArgs);
           
           if (!args.length)
             throw new JspmError('No module path provided to list');
@@ -189,7 +205,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         break;    
 
       case 'rem': {
-        const { args } = readFlags(rawArgs, {});
+        const { args } = readFlags(rawArgs);
         const { rem } = await import('./cmd/rem.ts');
         const changed = await rem(args);
         if (changed)
@@ -197,6 +213,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         else
           ok(`No package.json dependencies found to remove.`);
         break;
+      }
+
+      case 'run': {
+
       }
 
       case 'version':
@@ -224,13 +244,13 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 function cmdHelp (cmd: string) {
   if (!help[cmd]) {
     // TODO: levenstein suggestion
-    return chalk.red(`Unknown command ${chalk.bold(cmd)}\n`) + usage(false);
+    return chalk.red(`Unknown command ${chalk.bold(cmd)}\n`) + usage();
   }
   const [, description, detail] = help[cmd];
   return '\n  ' + description + '\n' + (detail ? detail + '\n' : '');
 }
 
-function cmdList (cmds: string[]) {
+function cmdList (cmds: string[], doubleSpace = false) {
   const list: string[] = [];
   let maxCmdLen = 0;
   for (const cmd of cmds) {
@@ -239,25 +259,24 @@ function cmdList (cmds: string[]) {
   }
   for (const cmd of cmds) {
     const [command, description] = help[cmd];
-    list.push(command.padEnd(maxCmdLen + 2, ' ') + description + '\n');
+    list.push(command.padEnd(maxCmdLen + 2, ' ') + description + (doubleSpace ? '\n' : ''));
   }
   return '\n    ' + list.join('\n    ');
 }
 
-function usage (fullList = false) {
-  if (fullList)
-    return '\n' + chalk.bold('  Command List:\n') + cmdList(Object.keys(help)) + `
-  Run "jspm help <cmd>" for help on a specific command.
-`;
+const highlightCommands = ['add', 'link', 'deno', 'help'];
 
+function usage () {
   const header = `
   > https://jspm.org/cli#v${version} ▪ ES Module Package Management
   
-  ${chalk.italic('Package import map workflows from Deno to the browser.')}
+  ${chalk.italic('Package import map workflows from Deno to the browser.')}\n
+  ${chalk.bold('Primary Commands:')}
 `;
 
-  return header + cmdList(['add', 'link', 'deno', 'help']) + `
-  Run "jspm help --commands" or "jspm help -c" for the full command list.
+  return header + cmdList(highlightCommands, true) + `
+  ${chalk.bold('Command List:\n') + cmdList(Object.keys(help).filter(x => !highlightCommands.includes(x)))}\n
+  Run "jspm help <cmd>" for help on a specific command.
 `;
 }
 
@@ -312,6 +331,21 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     `
   ],
 
+  'cc': [
+    'jspm cc',
+    'Clear the jspm local URL cache', `
+      jspm cc
+
+      ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}
+
+      Clears the jspm version cache.
+
+      When running under Deno, clears all jspm CDN URLs from the Deno cache.
+      When running under Node.js, clears all jspm CDN permacache URLs from the
+      custom fetch cache.
+    `
+  ],
+
   'deno': [
     'jspm deno <module>',
     'Execute "deno run" with jspm linking', `
@@ -321,7 +355,6 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     -p, --production          Use "production" conditional module resolutions
                               (defaults to "development").
     -i, --install             Run a full install for any missing dependencies.
-        --log[=<name>, ...]   Display link logs
 
     All Deno run options should be supported. See "deno help run".
 
@@ -361,14 +394,11 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     without any module arguments.
 
     Optionss
-    -i, --install             Auto install local dependencies into the
-                              package.json that are found locally.
     -d, --deno                Resolve modules for the "deno" environment.
     -p, --production          Resolve modules the "production" environment
                               (defaults to "development").
         --node                Resolve modules for the "node" environment.
         [--env=custom]+       Resolve modules for custom environment names.
-        --log[=<name>,...]    Display linkage logs
 
     For more information on how module resolution works and the way conditional
     environment resolution applies, see the JSPM module resolution guide at
@@ -416,6 +446,14 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     package.json file after running "jspm rem react":
      
     ${indent(printFrame(JSON.stringify({ dependencies: {}}, null, 2)), '    ')}`
+  ],
+
+  'run': [
+    'jspm run <script>',
+    'Run a package.json script', `
+    jspm run <script>
+
+    ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
   ],
 
   'version': [

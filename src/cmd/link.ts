@@ -10,8 +10,7 @@ export async function link (modules: string | string[], opts: TraceMapOptions): 
   if (typeof modules === 'string')
     modules = [modules];
 
-  if (modules.length === 0)
-    opts = { install: true, ...opts };
+  opts = { ...opts, install: true };
 
   const traceMap = new TraceMap(baseUrl, opts);
 
