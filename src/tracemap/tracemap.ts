@@ -6,10 +6,6 @@ import { JspmError, throwInternalError } from "../common/err.ts";
 import { parsePkg } from "../install/package.ts";
 import { getMapMatch, getScopeMatches, IImportMap, ImportMap } from "./map.ts";
 import resolver from "../install/resolver.ts";
-import { DependenciesField, updatePjson } from "./pjson.ts";
-import { fileURLToPath } from 'url';
-import path from 'path';
-import { builtinSet } from "../install/installer.ts";
 
 export interface TraceMapOptions extends InstallOptions {
   env?: string[];
@@ -27,21 +23,11 @@ export interface TraceMapOptions extends InstallOptions {
   // whether to permit new install into the lockfile
   install?: boolean;
 
-  // whether the install is a full dependency install
-  // or simply a trace install
-  fullInstall?: boolean;
-
   // whether the import map is a full generic import map for the app
   // or an exact trace for the provided entry points
   fullMap?: boolean;
 
   // (installType: 'trace' + mapType: 'full' currently unsupported)
-
-  // save flags
-  save?: boolean;
-  saveDev?: boolean;
-  savePeer?: boolean;
-  saveOptional?: boolean;
 }
 
 interface TraceGraph {
@@ -68,8 +54,6 @@ export default class TraceMap {
   mapBase: URL;
   pjsonBase: URL | undefined;
   entryTraces = new Set<string>();
-  added = new Map<string, InstallTarget>();
-  pjson: any | undefined;
 
   constructor (mapBase: URL, opts: TraceMapOptions = {}) {
     this.mapBase = mapBase;
@@ -151,59 +135,12 @@ export default class TraceMap {
         }
       }
 
-      // update the package.json dependencies
-      let pjsonChanged = false;
-      let saveField: DependenciesField | null = this.opts.save ? 'dependencies' : this.opts.saveDev ? 'devDependencies' : this.opts.savePeer ? 'peerDependencies' : this.opts.saveOptional ? 'optionalDependencies' : null;
-      if (saveField) {
-        pjsonChanged = await updatePjson(this.pjsonBase!, async pjson => {
-          pjson[saveField!] = pjson[saveField!] || {};
-          for (const [name, target] of this.added) {
-            if (target instanceof URL) {
-              if (target.protocol === 'file:') {
-                pjson[saveField!]![name] = 'file:' + path.relative(fileURLToPath(this.pjsonBase), fileURLToPath(target));
-              }
-              else {
-                pjson[saveField!]![name] = target.href;
-              }
-            }
-            else {
-              let versionRange = target.ranges.map(range => range.toString()).join(' || ');
-              if (versionRange === '*') {
-                const pcfg = await resolver.getPackageConfig(this.installer!.installs[this.pjsonBase!.href][target.name]);
-                if (pcfg)
-                  versionRange = '^' + pcfg?.version;
-              }
-              pjson[saveField!]![name] = (target.name === name ? '' : target.registry + ':' + target.name + '@') + versionRange;
-            }
-          }
-        });
-        if (pjsonChanged)
-          this.opts.fullInstall = true;
-      }
-
-      // prune the lockfile to the include traces only
-      // this is done after pjson updates to include any adds
-      if (this.opts.fullInstall) {
-        const deps = await resolver.getDepList(this.pjsonBase!.href, true);
-        // existing deps is any existing builtin resolutions
-        const existingBuiltins = new Set(Object.keys(this.installer!.installs[this.pjsonBase!.href] || {}).filter(name => builtinSet.has(name)));
-        const installs = await this.installer!.lockInstall([...new Set([...deps, ...existingBuiltins])], this.pjsonBase!.href, true);
-
-        // construct the full map
-        if (this.opts.fullMap) {
-          await Promise.all(installs.map(async ([name, pkgUrl]) => {
-            await this.addAllPkgMappings(name, this.installer!.installs[pkgUrl][name], this.env, pkgUrl === this.mapBase!.href ? null : pkgUrl);
-          }));
-        }
-      }
-
-      return finishInstall(true) || pjsonChanged;
+      return finishInstall(true);
     };
   }
 
   async add (name: string, target: InstallTarget): Promise<string> {
-    const installed = await this.installer!.installTarget(name, target, this.mapBase.href);
-    this.added.set(name, target);
+    const installed = await this.installer!.installTarget(name, target, this.mapBase.href, true);
     return installed.slice(0, -1);
   }
 

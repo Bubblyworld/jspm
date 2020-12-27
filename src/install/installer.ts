@@ -8,6 +8,8 @@ import resolver from "./resolver.ts";
 import { ExactPackage, newPackageTarget, PackageTarget, pkgToUrl } from "./package.ts";
 import { isURL, importedFrom } from "../common/url.ts";
 import { throwInternalError } from "../common/err.ts";
+import { DependenciesField, updatePjson } from './pjson.ts';
+import path from 'path';
 
 export const builtinSet = new Set<string>(builtinModules);
 
@@ -40,6 +42,17 @@ export interface InstallOptions {
   stdlib?: string;
 
   cdnUrl?: string;
+
+  
+  // whether the install is a full dependency install
+  // or simply a trace install
+  fullInstall?: boolean;
+
+  // save flags
+  save?: boolean;
+  saveDev?: boolean;
+  savePeer?: boolean;
+  saveOptional?: boolean;
 };
 
 export class Installer {
@@ -52,6 +65,7 @@ export class Installer {
   installBaseUrl: string;
   lockfilePath: string;
   cdnUrl = 'https://ga.jspm.io/';
+  added = new Map<string, InstallTarget>();
 
   constructor (baseUrl: URL, opts: InstallOptions) {
     this.installBaseUrl = baseUrl.href;
@@ -74,21 +88,66 @@ export class Installer {
     }
   }
 
-  async startInstall (): Promise<(success: boolean) => boolean> {
+  async startInstall (): Promise<(success: boolean) => Promise<boolean>> {
     if (this.installing)
       return this.currentInstall.then(() => this.startInstall());
-    let finishInstall: (success: boolean) => boolean;
+    let finishInstall: (success: boolean) => Promise<boolean>;
     this.installing = true;
     this.newInstalls = false;
+    this.added = new Map<string, InstallTarget>();
     this.currentInstall = new Promise(resolve => {
-      finishInstall = (success: boolean) => {
-        const changed = success && (this.opts.freezeLock === true || this.opts.noLock === true || lock.saveVersionLock(this.installs, this.lockfilePath));
+      finishInstall = async (success: boolean) => {
+        const pjsonChanged = success && await this.finalizeInstall(this.opts.fullInstall === true);
+        const changed = success && (this.opts.freezeLock === true || this.opts.noLock === true || lock.saveVersionLock(this.installs, this.lockfilePath)) || pjsonChanged;
         this.installing = false;
         resolve();
         return changed;
       };
     });
     return finishInstall!;
+  }
+
+  async finalizeInstall (fullInstall: boolean): Promise<boolean> {
+    // update the package.json dependencies
+    let pjsonChanged = false;
+    let saveField: DependenciesField | null = this.opts.save ? 'dependencies' : this.opts.saveDev ? 'devDependencies' : this.opts.savePeer ? 'peerDependencies' : this.opts.saveOptional ? 'optionalDependencies' : null;
+    if (saveField) {
+      pjsonChanged = await updatePjson(this.installBaseUrl, async pjson => {
+        pjson[saveField!] = pjson[saveField!] || {};
+        for (const [name, target] of this.added) {
+          if (target instanceof URL) {
+            if (target.protocol === 'file:') {
+              pjson[saveField!]![name] = 'file:' + path.relative(fileURLToPath(this.installBaseUrl), fileURLToPath(target));
+            }
+            else {
+              pjson[saveField!]![name] = target.href;
+            }
+          }
+          else {
+            let versionRange = target.ranges.map(range => range.toString()).join(' || ');
+            if (versionRange === '*') {
+              const pcfg = await resolver.getPackageConfig(this.installs[this.installBaseUrl][target.name]);
+              if (pcfg)
+                versionRange = '^' + pcfg?.version;
+            }
+            pjson[saveField!]![name] = (target.name === name ? '' : target.registry + ':' + target.name + '@') + versionRange;
+          }
+        }
+      });
+      if (pjsonChanged)
+        fullInstall = true;
+    }
+
+    // prune the lockfile to the include traces only
+    // this is done after pjson updates to include any adds
+    if (fullInstall) {
+      const deps = await resolver.getDepList(this.installBaseUrl, true);
+      // existing deps is any existing builtin resolutions
+      const existingBuiltins = new Set(Object.keys(this.installs[this.installBaseUrl] || {}).filter(name => builtinSet.has(name)));
+      await this.lockInstall([...new Set([...deps, ...existingBuiltins])], this.installBaseUrl, true);
+    }
+
+    return pjsonChanged;
   }
 
   async lockInstall (installs: string[], pkgUrl = this.installBaseUrl, prune = true): Promise<[string, string][]> {
@@ -112,8 +171,20 @@ export class Installer {
     return pruneList;
   }
 
-  async installTarget (pkgName: string, target: InstallTarget, pkgScope: string, parentUrl = pkgScope): Promise<string> {
+  // this.added.set(name, target);
+
+  async installTarget (pkgName: string, target: InstallTarget, pkgScope: string, pjsonPersist: boolean, parentUrl = pkgScope): Promise<string> {
     this.newInstalls = true;
+
+    if (pjsonPersist) {
+      if (pkgScope === this.installBaseUrl && pkgScope.startsWith('file:')) {
+        this.added.set(pkgName, target);
+      }
+      else {
+        log('info', `Package ${pkgName} not declared in package.json dependencies${importedFrom(parentUrl)}.`);
+      }
+    }
+
     if (target instanceof URL) {
       log('install', `${pkgName} ${pkgScope} -> ${target.href}`);
       const pkgUrl = target.href + (target.href.endsWith('/') ? '' : '/');
@@ -162,27 +233,20 @@ export class Installer {
     const installTarget = pcfg.dependencies?.[pkgName] || pcfg.peerDependencies?.[pkgName] || pcfg.optionalDependencies?.[pkgName] || pcfg.devDependencies?.[pkgName];
     if (installTarget) {
       const target = newPackageTarget(installTarget, pkgUrl, pkgName);
-      return this.installTarget(pkgName, target, pkgUrl, parentUrl);
+      return this.installTarget(pkgName, target, pkgUrl, false, parentUrl);
     }
 
     // node.js core
     if (builtinSet.has(pkgName)) {
       const target = this.stdlibTarget;
-      const resolution = (await this.installTarget(pkgName, target, pkgUrl, parentUrl)).slice(0, -1) + '|nodelibs/' + pkgName;
+      const resolution = (await this.installTarget(pkgName, target, pkgUrl, false, parentUrl)).slice(0, -1) + '|nodelibs/' + pkgName;
       lock.setResolution(this.installs, pkgName, pkgUrl, resolution);
       return resolution;
     }
 
     // global install fallback
-    log('info', `Package ${pkgName} not declared in package.json dependencies${importedFrom(parentUrl)}.`);
     const target = newPackageTarget('*', pkgUrl, pkgName);
-    const exactInstall = await this.installTarget(pkgName, target, pkgUrl, parentUrl);
-    if (pkgUrl === this.installBaseUrl && pkgUrl.startsWith('file:')) {
-      // add to package.json!
-      // pjson.parseStyled(pjsonSource, pkgUrl);
-      // (follows this.opts.save | this.opts.saveDev | this.opts.savePeer | this.opts.saveOptional)
-      // console.log('TODO: local package.json installs');
-    }
+    const exactInstall = await this.installTarget(pkgName, target, pkgUrl, true, parentUrl);
     return exactInstall;
   }
 

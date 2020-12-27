@@ -22,7 +22,7 @@ export interface PackageJson {
   devDependencies?: Record<string, string>;
 }
 
-export async function updatePjson (pjsonBase: URL, updateFn: (pjson: PackageJson) => void | PackageJson | Promise<void | PackageJson>): Promise<boolean> {
+export async function updatePjson (pjsonBase: string, updateFn: (pjson: PackageJson) => void | PackageJson | Promise<void | PackageJson>): Promise<boolean> {
   const pjsonUrl = new URL('package.json', pjsonBase);
   const input = readFileSync(pjsonUrl).toString();
   let { json: pjson, style } = json.parseStyled(input);
@@ -31,6 +31,6 @@ export async function updatePjson (pjsonBase: URL, updateFn: (pjson: PackageJson
   if (output === input)
     return false;
   writeFileSync(pjsonUrl, json.stringifyStyled(pjson, style));
-  resolver.pcfgs[pjsonBase.href] = pjson as PackageConfig;
+  resolver.pcfgs[pjsonBase] = pjson as PackageConfig;
   return true;
 }

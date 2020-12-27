@@ -1,12 +1,12 @@
 import { baseUrl } from '../common/url.ts';
-import { updatePjson } from "../tracemap/pjson.ts";
+import { updatePjson } from "../install/pjson.ts";
 import TraceMap from '../tracemap/tracemap.ts';
 
 export async function rem (names: string | string[]): Promise<boolean> {
   if (typeof names === 'string')
     names = [names];
 
-  const changed = await updatePjson(baseUrl, pjson => {
+  const changed = await updatePjson(baseUrl.href, pjson => {
     for (const name of names) {
       if (pjson.dependencies?.[name])
         delete pjson.dependencies[name];

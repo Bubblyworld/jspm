@@ -12,7 +12,7 @@ export async function link (modules: string | string[], opts: TraceMapOptions): 
   if (typeof modules === 'string')
     modules = [modules];
 
-  opts = { ...opts, install: true };
+  opts = { ...opts, install: true, save: true };
 
   const traceMap = new TraceMap(baseUrl, opts);
 
