@@ -47,7 +47,7 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
     }
   }
 
-  opts.save = true;
+  opts.save = !opts.freezeLock && !opts.noLock;
 
   const traceMap = new TraceMap(baseUrl, opts);
   const finishInstall = await traceMap.startInstall();

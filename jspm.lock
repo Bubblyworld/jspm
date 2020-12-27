@@ -3,13 +3,15 @@
 url = "."
 
 [package.deps]
-"@iarna/toml" = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
+"@iarna/toml" = "./deps/@iarna/toml"
+buffer = "./core/dist|nodelibs/buffer"
 cache = "./deps/cache"
 chalk = "https://ga.jspm.io/npm:chalk@4.1.0"
 crypto = "./core/dist|nodelibs/crypto"
 es-module-lexer = "https://ga.jspm.io/npm:es-module-lexer@0.3.26"
 fs = "./core/dist|nodelibs/fs"
 make-fetch-happen = "https://ga.jspm.io/npm:make-fetch-happen@8.0.12"
+mkdirp = "https://ga.jspm.io/npm:mkdirp@1.0.4"
 module = "./core/dist|nodelibs/module"
 ora = "https://ga.jspm.io/npm:ora@5.1.0"
 os = "./core/dist|nodelibs/os"
@@ -20,7 +22,7 @@ sver = "https://ga.jspm.io/npm:sver@1.8.3"
 url = "./core/dist|nodelibs/url"
 
 [[package]]
-url = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
+url = "./deps/@iarna/toml"
 
 [package.deps]
 process = "./core/dist|nodelibs/process"
@@ -271,6 +273,15 @@ url = "https://ga.jspm.io/npm:minizlib@2.1.2"
 [package.deps]
 minipass = "https://ga.jspm.io/npm:minipass@3.1.3"
 yallist = "https://ga.jspm.io/npm:yallist@4.0.0"
+
+[[package]]
+url = "https://ga.jspm.io/npm:mkdirp@1.0.4"
+
+[package.deps]
+fs = "./core/dist|nodelibs/fs"
+path = "./core/dist|nodelibs/path"
+process = "./core/dist|nodelibs/process"
+util = "./core/dist|nodelibs/util"
 
 [[package]]
 url = "https://ga.jspm.io/npm:once@1.4.0"

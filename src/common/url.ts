@@ -1,5 +1,6 @@
-import { pathToFileURL } from 'url';
+import { pathToFileURL, fileURLToPath } from 'url';
 import process from 'process';
+import path from 'path';
 
 declare global {
   var document: any;
@@ -60,4 +61,11 @@ export function isPlain (specifier: string) {
 
 export function isRelative (specifier: string) {
   return specifier.startsWith('./') || specifier.startsWith('../') || specifier.startsWith('/');
+}
+
+export function urlToNiceStr (url: URL | string) {
+  let relPath = path.relative(process.cwd(), fileURLToPath(url));
+  if (relPath[0] !== '.')
+    relPath = './' + relPath;
+  return relPath;
 }

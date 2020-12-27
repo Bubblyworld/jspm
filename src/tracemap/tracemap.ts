@@ -3,7 +3,7 @@ import { baseUrl, importedFrom, isPlain } from "../common/url.ts";
 import { Installer } from "../install/installer.ts";
 import { log } from "../common/log.ts";
 import { JspmError, throwInternalError } from "../common/err.ts";
-import { parsePkg } from "../install/package.ts";
+import { parsePkg, PackageTarget } from "../install/package.ts";
 import { getMapMatch, getScopeMatches, IImportMap, ImportMap } from "./map.ts";
 import resolver from "../install/resolver.ts";
 
@@ -26,8 +26,6 @@ export interface TraceMapOptions extends InstallOptions {
   // whether the import map is a full generic import map for the app
   // or an exact trace for the provided entry points
   fullMap?: boolean;
-
-  // (installType: 'trace' + mapType: 'full' currently unsupported)
 }
 
 interface TraceGraph {
@@ -64,6 +62,10 @@ export default class TraceMap {
       this.map = opts.inMap instanceof ImportMap ? opts.inMap : new ImportMap(mapBase).extend(opts.inMap);
     else
       this.map = new ImportMap(mapBase);
+  }
+
+  replace (target: InstallTarget, pkgUrl: string) {
+    this.installer!.replace(target, pkgUrl);
   }
 
   async visit (url: string, visitor: (url: string, entry: TraceEntry) => Promise<boolean | void>, seen = new Set()) {
@@ -139,8 +141,8 @@ export default class TraceMap {
     };
   }
 
-  async add (name: string, target: InstallTarget): Promise<string> {
-    const installed = await this.installer!.installTarget(name, target, this.mapBase.href, true);
+  async add (name: string, target: InstallTarget, persist = true): Promise<string> {
+    const installed = await this.installer!.installTarget(name, target, this.mapBase.href, persist);
     return installed.slice(0, -1);
   }
 

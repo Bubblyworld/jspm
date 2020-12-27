@@ -50,13 +50,14 @@ export function loadVersionLock (lockFile: string): Lockfile {
     }
   }
 
-  function parseResolutions (resolutions: Record<string, string>): Record<string, string> {
-    const pkgResolutions: Record<string, string> = {};
-    for (const impt of Object.keys(resolutions)) {
-      const resolution = resolutions[impt];
+  function parseResolutions (deps: Record<string, string>, resolutions: Record<string, Record<string, string>>): Record<string, string> {
+    const pkgResolutions: Record<string, string> = Object.create(null);
+    for (const impt of Object.keys(deps)) {
+      const resolution = deps[impt];
       if (typeof resolution !== 'string')
         continue;
       const url = parseResolutionURL(resolution, impt);
+      resolutions[url] = resolutions[url] || Object.create(null);
       pkgResolutions[impt] = url;
     }
     return pkgResolutions;
@@ -75,11 +76,10 @@ export function loadVersionLock (lockFile: string): Lockfile {
 
   for (const { url, deps } of packages) {
     const scopeURL = parseResolutionURL(url);
-    if (typeof deps === 'object') {
-      const pkgResolutions = parseResolutions(deps);
-      if (pkgResolutions)
-        resolutions[scopeURL] = pkgResolutions;
-    }
+    if (typeof deps === 'object')
+      resolutions[scopeURL] = parseResolutions(deps, resolutions);
+    else if (scopeURL.endsWith('/'))
+      resolutions[scopeURL] = Object.create(null);
   }
 
   return { resolutions };
@@ -91,6 +91,8 @@ export function saveVersionLock (resolutions: LockResolutions, lockFile: string)
   for (const pkgUrl of Object.keys(resolutions)) {
     const url = relativeUrl(new URL(pkgUrl), lockFileUrl).slice(0, -1);
     const entries: [string, string][] = Object.entries(resolutions[pkgUrl]);
+    if (entries.length === 0)
+      continue;
     packages.push(entries.length ? {
       url,
       deps: Object.fromEntries(entries.map(([key, value]) => {

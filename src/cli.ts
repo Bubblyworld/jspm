@@ -9,6 +9,7 @@ import type { TraceMapOptions } from "./tracemap/tracemap.ts";
 import process from 'process';
 import { indent, printFrame, indentGraph } from './cli/format.ts';
 import { writeFileSync, readFileSync } from 'fs';
+import { urlToNiceStr } from './common/url.ts';
 
 export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<number> {
   let spinner;
@@ -71,7 +72,20 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       }
 
       case 'checkout': {
+        const { args } = readFlags(rawArgs);
 
+        if (args.length !== 1)
+          throw new JspmError(`A single package target must be provided to check out.`);
+
+        const { checkout } = await import('./cmd/checkout.ts');
+        spinner = await startSpinnerLog(log);
+        spinner.text = `Checking out ${args[0].slice(0, process.stdout.columns - 21)}...`;
+        const checkoutDir = await checkout(args[0]);
+        if (checkout)
+          ok(`Checked out ${args[0]} into ${urlToNiceStr(checkoutDir)}.`);
+        else
+          ok(`Already checked out.`);
+        break;
       }
 
       case 'deno': {
@@ -112,7 +126,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       }
 
       case 'help': {
-        const { args, opts } = readFlags(rawArgs);
+        const { args } = readFlags(rawArgs);
         if (args.length > 1)
           throw new JspmError(`jspm help only takes a single command, try "jspm help ${args[0]}".`);
         if (args.length === 0)
@@ -170,54 +184,48 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         throw new JspmError('jspm locate is a TODO');
       }
 
-      case 'ls':
-        try {
-          const { args, opts } = readFlags(rawArgs);
-          
-          if (!args.length)
-            throw new JspmError('No module path provided to list');
-          if (args.length > 1)
-            throw new JspmError('Only one module must be passed to list');
+      case 'ls': {
+        const { args } = readFlags(rawArgs);
+        
+        if (!args.length)
+          throw new JspmError('No module path provided to list');
+        if (args.length > 1)
+          throw new JspmError('Only one module must be passed to list');
 
-          const { list } = await import ('./cmd/list.ts');
-          const { resolved, exports } = await list(args[0]);
+        const { list } = await import ('./cmd/list.ts');
+        const { resolved, exports } = await list(args[0]);
 
-          console.log(resolved);
-          const padding = Math.min(Math.max(<number>Object.keys(exports).map(key => key.length).sort((a, b) => a > b ? 1 : -1).pop() + 2, 20), 80);
-          for (const key of Object.keys(exports)) {
-            const value = exports[key];
-            if (typeof value === 'string') {
-              console.log(key + value.padStart(padding - key.length + value.length, ' '));
-            }
-            else if (value !== null) {
-              let depth = 0;
-              function logNestedObj (obj: Record<string, any>): string[] {
-                depth += 2;
-                const curDepth = depth;
-                const lines: string[] = [];
-                for (const key of Object.keys(obj)) {
-                  const value = obj[key];
-                  if (typeof value === 'string') {
-                    lines.push(chalk.black.bold(key) + value.padStart(padding - key.length + value.length - curDepth, ' '));
-                  }
-                  else {
-                    lines.push(key);
-                    for (const line of logNestedObj(value))
-                      lines.push(line);
-                  }
+        console.log(resolved);
+        const padding = Math.min(Math.max(<number>Object.keys(exports).map(key => key.length).sort((a, b) => a > b ? 1 : -1).pop() + 2, 20), 80);
+        for (const key of Object.keys(exports)) {
+          const value = exports[key];
+          if (typeof value === 'string') {
+            console.log(key + value.padStart(padding - key.length + value.length, ' '));
+          }
+          else if (value !== null) {
+            let depth = 0;
+            function logNestedObj (obj: Record<string, any>): string[] {
+              depth += 2;
+              const curDepth = depth;
+              const lines: string[] = [];
+              for (const key of Object.keys(obj)) {
+                const value = obj[key];
+                if (typeof value === 'string') {
+                  lines.push(chalk.black.bold(key) + value.padStart(padding - key.length + value.length - curDepth, ' '));
                 }
-                return indentGraph(lines);
+                else {
+                  lines.push(key);
+                  for (const line of logNestedObj(value))
+                    lines.push(line);
+                }
               }
-              console.log(key + '\n' + logNestedObj(value).join('\n'));
+              return indentGraph(lines);
             }
+            console.log(key + '\n' + logNestedObj(value).join('\n'));
           }
         }
-        catch (e) {
-          if (typeof e === 'string')
-            throw `${chalk.bold.red('err')}  ${e}`;
-          throw e;
-        }
-        break;    
+        break;
+      }
 
       case 'rem': {
         const { args } = readFlags(rawArgs);
@@ -375,6 +383,7 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     'Check out a dependency for local vendoring', `
     jspm checkout <package target>
 
+    Downloads the given package target.
     `
   ],
 

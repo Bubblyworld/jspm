@@ -60,6 +60,9 @@ _fetch = async function (url: URL, ...args: any[]) {
         },
         async json () {
           return JSON.parse(source.toString());
+        },
+        arrayBuffer () {
+          return source;
         }
       };
     }
@@ -82,6 +85,9 @@ _fetch = async function (url: URL, ...args: any[]) {
         },
         async json () {
           return JSON.parse((await Deno.readTextFile(file.path)).toString());
+        },
+        async arrayBuffer () {
+          return (await Deno.readTextFile(file.path));
         }
       };
     }

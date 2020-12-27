@@ -4,8 +4,8 @@ import { log } from '../common/log.ts';
 import { builtinModules } from 'module';
 import { fileURLToPath } from 'url';
 import * as lock from "./lock.ts";
-import resolver from "./resolver.ts";
-import { ExactPackage, newPackageTarget, PackageTarget, pkgToUrl } from "./package.ts";
+import resolver, { cdnUrls } from "./resolver.ts";
+import { ExactPackage, newPackageTarget, PackageTarget, pkgToUrl, parseCdnPkg } from "./package.ts";
 import { isURL, importedFrom } from "../common/url.ts";
 import { throwInternalError } from "../common/err.ts";
 import { DependenciesField, updatePjson } from './pjson.ts';
@@ -97,8 +97,53 @@ export class Installer {
     this.added = new Map<string, InstallTarget>();
     this.currentInstall = new Promise(resolve => {
       finishInstall = async (success: boolean) => {
-        const pjsonChanged = success && await this.finalizeInstall(this.opts.fullInstall === true);
-        const changed = success && (this.opts.freezeLock === true || this.opts.noLock === true || lock.saveVersionLock(this.installs, this.lockfilePath)) || pjsonChanged;
+        if (!success) {
+          this.installing = false;
+          resolve();
+          return false;
+        }
+
+        // update the package.json dependencies
+        let pjsonChanged = false;
+        let saveField: DependenciesField | null = this.opts.save ? 'dependencies' : this.opts.saveDev ? 'devDependencies' : this.opts.savePeer ? 'peerDependencies' : this.opts.saveOptional ? 'optionalDependencies' : null;
+        if (saveField) {
+          pjsonChanged = await updatePjson(this.installBaseUrl, async pjson => {
+            pjson[saveField!] = pjson[saveField!] || {};
+            for (const [name, target] of this.added) {
+              if (target instanceof URL) {
+                if (target.protocol === 'file:') {
+                  pjson[saveField!]![name] = 'file:' + path.relative(fileURLToPath(this.installBaseUrl), fileURLToPath(target));
+                }
+                else {
+                  pjson[saveField!]![name] = target.href;
+                }
+              }
+              else {
+                let versionRange = target.ranges.map(range => range.toString()).join(' || ');
+                if (versionRange === '*') {
+                  const pcfg = await resolver.getPackageConfig(this.installs[this.installBaseUrl][target.name]);
+                  if (pcfg)
+                    versionRange = '^' + pcfg?.version;
+                }
+                pjson[saveField!]![name] = (target.name === name ? '' : target.registry + ':' + target.name + '@') + versionRange;
+              }
+            }
+          });
+        }
+
+        // prune the lockfile to the include traces only
+        // this is done after pjson updates to include any adds
+        if (this.opts.fullInstall || pjsonChanged) {
+          const deps = await resolver.getDepList(this.installBaseUrl, true);
+          // existing deps is any existing builtin resolutions
+          const existingBuiltins = new Set(Object.keys(this.installs[this.installBaseUrl] || {}).filter(name => builtinSet.has(name)));
+          await this.lockInstall([...new Set([...deps, ...existingBuiltins])], this.installBaseUrl, true);
+        }
+
+        console.log(this.opts);
+        console.log(JSON.stringify(this.installs, null, 2));
+        const changed = this.opts.freezeLock === true || this.opts.noLock === true ||
+            lock.saveVersionLock(this.installs, this.lockfilePath) || pjsonChanged;
         this.installing = false;
         resolve();
         return changed;
@@ -107,50 +152,7 @@ export class Installer {
     return finishInstall!;
   }
 
-  async finalizeInstall (fullInstall: boolean): Promise<boolean> {
-    // update the package.json dependencies
-    let pjsonChanged = false;
-    let saveField: DependenciesField | null = this.opts.save ? 'dependencies' : this.opts.saveDev ? 'devDependencies' : this.opts.savePeer ? 'peerDependencies' : this.opts.saveOptional ? 'optionalDependencies' : null;
-    if (saveField) {
-      pjsonChanged = await updatePjson(this.installBaseUrl, async pjson => {
-        pjson[saveField!] = pjson[saveField!] || {};
-        for (const [name, target] of this.added) {
-          if (target instanceof URL) {
-            if (target.protocol === 'file:') {
-              pjson[saveField!]![name] = 'file:' + path.relative(fileURLToPath(this.installBaseUrl), fileURLToPath(target));
-            }
-            else {
-              pjson[saveField!]![name] = target.href;
-            }
-          }
-          else {
-            let versionRange = target.ranges.map(range => range.toString()).join(' || ');
-            if (versionRange === '*') {
-              const pcfg = await resolver.getPackageConfig(this.installs[this.installBaseUrl][target.name]);
-              if (pcfg)
-                versionRange = '^' + pcfg?.version;
-            }
-            pjson[saveField!]![name] = (target.name === name ? '' : target.registry + ':' + target.name + '@') + versionRange;
-          }
-        }
-      });
-      if (pjsonChanged)
-        fullInstall = true;
-    }
-
-    // prune the lockfile to the include traces only
-    // this is done after pjson updates to include any adds
-    if (fullInstall) {
-      const deps = await resolver.getDepList(this.installBaseUrl, true);
-      // existing deps is any existing builtin resolutions
-      const existingBuiltins = new Set(Object.keys(this.installs[this.installBaseUrl] || {}).filter(name => builtinSet.has(name)));
-      await this.lockInstall([...new Set([...deps, ...existingBuiltins])], this.installBaseUrl, true);
-    }
-
-    return pjsonChanged;
-  }
-
-  async lockInstall (installs: string[], pkgUrl = this.installBaseUrl, prune = true): Promise<[string, string][]> {
+  async lockInstall (installs: string[], pkgUrl = this.installBaseUrl, prune = true) {
     const visited = new Set<string>();
     const visitInstall = async (name: string, pkgUrl: string): Promise<void> => {
       if (visited.has(name + '##' + pkgUrl))
@@ -163,15 +165,40 @@ export class Installer {
       await Promise.all([...new Set([...deps, ...existingDeps])].map(dep => visitInstall(dep, installPkgUrl)));
     };
     await Promise.all(installs.map(install => visitInstall(install, pkgUrl)));
-    const pruneList: [string, string][] = [...visited].map(item => {
-      const [name, pkgUrl] = item.split('##');
-      return [name, pkgUrl];
-    });
-    this.installs = lock.pruneResolutions(this.installs, pruneList);
-    return pruneList;
+    if (prune) {
+      const pruneList: [string, string][] = [...visited].map(item => {
+        const [name, pkgUrl] = item.split('##');
+        return [name, pkgUrl];
+      });
+      this.installs = lock.pruneResolutions(this.installs, pruneList);
+    }
   }
 
-  // this.added.set(name, target);
+  replace (target: InstallTarget, replacePkgUrl: string) {
+    let targetUrl: string;
+    if (target instanceof URL) {
+      targetUrl = target.href;
+    }
+    else {
+      const pkg = this.getBestMatch(target);
+      if (!pkg)
+        throw new Error('No installation found to replace.');
+      targetUrl = pkgToUrl(pkg, this.cdnUrl);
+    }
+
+    for (const pkgUrl of Object.keys(this.installs)) {
+      for (const name of Object.keys(this.installs[pkgUrl])) {
+        if (this.installs[pkgUrl][name] === targetUrl) {
+          this.newInstalls = true;
+          this.installs[pkgUrl][name] = replacePkgUrl;
+        }
+      }
+      if (pkgUrl === targetUrl) {
+        this.installs[replacePkgUrl] = this.installs[pkgUrl];
+        delete this.installs[pkgUrl];
+      }
+    }
+  }
 
   async installTarget (pkgName: string, target: InstallTarget, pkgScope: string, pjsonPersist: boolean, parentUrl = pkgScope): Promise<string> {
     this.newInstalls = true;
@@ -193,7 +220,7 @@ export class Installer {
     }
 
     if (this.opts.freezeLock) {
-      const existingInstall = await this.getBestMatch(target);
+      const existingInstall = this.getBestMatch(target);
       if (existingInstall) {
         log('install', `${pkgName} ${pkgScope} -> ${existingInstall.registry}:${existingInstall.name}@${existingInstall.version}`);
         const pkgUrl = pkgToUrl(existingInstall, this.cdnUrl);
@@ -203,7 +230,7 @@ export class Installer {
     }
 
     const latest = await resolver.resolveLatestTarget(target, parentUrl);
-    const installed = await this.getInstalledPackages(target.registry, target.name);
+    const installed = await this.getInstalledPackages(target);
     const restrictedToPkg = await this.tryUpgradePackagesTo(latest, installed);
 
     // cannot upgrade to latest -> stick with existing resolution (if compatible)
@@ -250,7 +277,7 @@ export class Installer {
     return exactInstall;
   }
 
-  private async getInstalledPackages (_registry: string, _name: string): Promise<PackageInstallRange[]> {
+  private async getInstalledPackages (pkg: InstallTarget): Promise<PackageInstallRange[]> {
     // TODO: to finish up version deduping algorithm, we need this
     // operation to search for all existing installs in this.installs
     // that have a target matching the given package
@@ -259,12 +286,13 @@ export class Installer {
     return [];
   }
 
-  private async getBestMatch (pkg: PackageTarget): Promise<ExactPackage | undefined> {
-    const existing = await this.getInstalledPackages(pkg.registry, pkg.name);
-    let bestMatch: ExactPackage | undefined;
-    for (const { pkg, target, install } of existing) {
-      if (!bestMatch) {
-        bestMatch = pkg;
+  private getBestMatch (pkg: PackageTarget): ExactPackage | null {
+    let bestMatch: ExactPackage | null = null;
+    for (const pkgUrl of Object.keys(this.installs)) {
+      const { pkg } = parseCdnPkg(pkgUrl, cdnUrls) || {};
+      if (pkg) {
+        if (!bestMatch)
+          bestMatch = pkg;
       }
     }
     return bestMatch;

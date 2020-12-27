@@ -7,6 +7,7 @@ import resolver from "./resolver.ts";
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
+import { urlToNiceStr } from "../common/url.ts";
 
 const { SemverRange } = sver;
 
@@ -86,10 +87,7 @@ export function pkgUrlToNiceString (pkgUrl: string, cdnUrls: string[] = ['https:
       return decodeURIComponent(pkgUrl.slice(url.length));
   }
   if (pkgUrl.startsWith('file:')) {
-    let relPath = path.relative(process.cwd(), fileURLToPath(pkgUrl));
-    if (relPath[0] !== '.')
-      relPath = './' + relPath;
-    return relPath;
+    return urlToNiceStr(pkgUrl);
   }
   return pkgUrl;
 }

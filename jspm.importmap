@@ -13,6 +13,7 @@
       "fs": "./core/dist/nodelibs-deno/fs.js",
       "fs/promises": "./core/dist/nodelibs-deno/fs-promises.js",
       "has-flag": "https://ga.jspm.io/npm:has-flag@4.0.0/index.js",
+      "mkdirp": "https://ga.jspm.io/npm:mkdirp@1.0.4/index.js",
       "module": "./core/dist/nodelibs/module.js",
       "os": "./core/dist/nodelibs/os.js",
       "path": "./core/dist/nodelibs/path.js",
@@ -23,20 +24,24 @@
       "sver": "https://ga.jspm.io/npm:sver@1.8.3/sver.js",
       "sver/convert-range": "https://ga.jspm.io/npm:sver@1.8.3/convert-range.js",
       "tty": "./core/dist/nodelibs/tty.js",
-      "url": "./core/dist/nodelibs/url.js"
+      "url": "./core/dist/nodelibs/url.js",
+      "util": "./core/dist/nodelibs/util.js"
     },
     "https://ga.jspm.io/": {
       "ansi-styles": "https://ga.jspm.io/npm:ansi-styles@4.3.0/index.js",
       "buffer": "./core/dist/nodelibs/buffer.js",
       "color-convert": "https://ga.jspm.io/npm:color-convert@2.0.1/index.js",
       "color-name": "https://ga.jspm.io/npm:color-name@1.1.4/index.js",
+      "fs": "./core/dist/nodelibs-deno/fs.js",
       "has-flag": "https://ga.jspm.io/npm:has-flag@4.0.0/index.js",
       "os": "./core/dist/nodelibs/os.js",
+      "path": "./core/dist/nodelibs/path.js",
       "process": "./core/dist/nodelibs-deno/process.js",
       "semver": "https://ga.jspm.io/npm:semver@6.3.0/semver.js",
       "stream": "./core/dist/nodelibs/stream.js",
       "supports-color": "https://ga.jspm.io/npm:supports-color@7.2.0/index.js",
-      "tty": "./core/dist/nodelibs/tty.js"
+      "tty": "./core/dist/nodelibs/tty.js",
+      "util": "./core/dist/nodelibs/util.js"
     }
   }
 }

@@ -5,6 +5,11 @@ import { fetch } from '../common/fetch.ts';
 import { importedFrom } from "../common/url.ts";
 import { computeIntegrity } from "../common/integrity.ts";
 import { parse } from 'es-module-lexer';
+import { Pool } from '../common/pool.ts';
+import { existsSync, writeFileSync } from 'fs';
+import mkdirp from 'mkdirp';
+import { Buffer } from 'buffer';
+import path from 'path';
 
 export function pkgToLookupUrl (pkg: ExactPackage, edge = false) {
   return `https://ga.jspm.io/${pkg.registry}:${pkg.name}${pkg.version != undefined ? '@' + pkg.version : edge ? '@' : ''}`;
@@ -282,13 +287,62 @@ export class Resolver {
   }
 
   async getIntegrity (url: string, offline: boolean) {
-    const res = await fetch(url, offline ? { cache: 'only-if-cached' } : {});
+    const res = await fetch(url, this.fetchOpts);
     switch (res.status) {
       case 200: case 304: break;
       case 404: throw new Error(`URL ${url} not found.`);
       default: throw new Error(`Invalid status code ${res.status} requesting ${url}. ${res.statusText}`);
     }
     return computeIntegrity(await res.text());
+  }
+
+  async dlPackage (pkgUrl: string, outDirPath: string, beautify = false) {
+    if (existsSync(outDirPath))
+      throw new JspmError(`Checkout directory ${outDirPath} already exists.`);
+
+    if (!pkgUrl.endsWith('/'))
+      pkgUrl += '/';
+
+    const dlPool = new Pool(20);
+
+    const pkgContents: Record<string, string | ArrayBuffer> = Object.create(null);
+
+    const pcfg = await resolver.getPackageConfig(pkgUrl);
+    if (!pcfg || !pcfg.files || !(pcfg.files instanceof Array))
+      throw new JspmError(`Unable to checkout ${pkgUrl} as there is no package files manifest.`);
+
+    await Promise.all((pcfg.files).map(async file => {
+      const url = pkgUrl + file;
+      await dlPool.queue();
+      try {
+        const res = await fetch(url, this.fetchOpts);
+        switch (res.status) {
+          case 304:
+          case 200:
+            const contentType = res.headers && res.headers.get('content-type');
+            let contents: string | ArrayBuffer = await res.arrayBuffer();
+            if (beautify) {
+              if (contentType === 'application/javascript') {
+                // contents = jsBeautify(contents);
+              }
+              else if (contentType === 'application/json') {
+                contents = JSON.stringify(JSON.parse(contents.toString()), null, 2);
+              }
+            }
+            return pkgContents[file] = contents;
+          default: throw new JspmError(`Invalid status code ${res.status} looking up ${url} - ${res.statusText}`);
+        }
+      }
+      finally {
+        dlPool.pop();
+      }
+    }));
+
+    for (const file of Object.keys(pkgContents)) {
+      const filePath = outDirPath + '/' + file;
+      mkdirp.sync(path.dirname(filePath));
+      writeFileSync(filePath, Buffer.from(pkgContents[file]));
+    }
   }
 
   async analyze (resolvedUrl: string, parentUrl?: URL, system = false): Promise<Analysis> {
