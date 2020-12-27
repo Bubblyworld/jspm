@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { runCmd } from '../common/cmd.ts';
 import { isPackageTarget, toPackageTarget } from "../install/package.ts";
 import process from 'process';
+import { pathToFileURL } from 'url';
 
 function computeMapHash (path: string) {
   const mapPrefix = createHash('sha256').update(path).digest().toString('base64').replace(/\//g, '-').slice(0, 8);
@@ -51,7 +52,7 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
   try {
     let module: string;
     if (isPackageTarget(targetStr)) {
-      const { alias, target, subpath } = await toPackageTarget(targetStr);
+      const { alias, target, subpath } = await toPackageTarget(targetStr, pathToFileURL(process.cwd() + '/').href);
       await traceMap.add(alias, target);
       module = alias + subpath.slice(1);
     }

@@ -69,7 +69,7 @@ export class Installer {
           this.stdlibTarget.pathname = this.stdlibTarget.pathname.slice(0, -1);
       }
       else {
-        this.stdlibTarget = newPackageTarget(opts.stdlib);
+        this.stdlibTarget = newPackageTarget(opts.stdlib, this.installBaseUrl);
       }
     }
   }
@@ -161,7 +161,7 @@ export class Installer {
     // package dependencies
     const installTarget = pcfg.dependencies?.[pkgName] || pcfg.peerDependencies?.[pkgName] || pcfg.optionalDependencies?.[pkgName] || pcfg.devDependencies?.[pkgName];
     if (installTarget) {
-      const target = newPackageTarget(installTarget, pkgName);
+      const target = newPackageTarget(installTarget, pkgUrl, pkgName);
       return this.installTarget(pkgName, target, pkgUrl, parentUrl);
     }
 
@@ -175,7 +175,7 @@ export class Installer {
 
     // global install fallback
     log('info', `Package ${pkgName} not declared in package.json dependencies${importedFrom(parentUrl)}.`);
-    const target = newPackageTarget('*', pkgName);
+    const target = newPackageTarget('*', pkgUrl, pkgName);
     const exactInstall = await this.installTarget(pkgName, target, pkgUrl, parentUrl);
     if (pkgUrl === this.installBaseUrl && pkgUrl.startsWith('file:')) {
       // add to package.json!

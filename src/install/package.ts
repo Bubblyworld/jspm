@@ -94,7 +94,7 @@ export function pkgUrlToNiceString (pkgUrl: string, cdnUrls: string[] = ['https:
   return pkgUrl;
 }
 
-export async function toPackageTarget (targetStr: string): Promise<{ alias: string, target: InstallTarget, subpath: string }> {
+export async function toPackageTarget (targetStr: string, parentPkgUrl: string): Promise<{ alias: string, target: InstallTarget, subpath: string }> {
   const urlTarget = await parseUrlTarget(targetStr);
   if (urlTarget)
     return urlTarget;
@@ -119,19 +119,19 @@ export async function toPackageTarget (targetStr: string): Promise<{ alias: stri
 
   return {
     alias,
-    target: newPackageTarget(pkg.pkgName),
+    target: newPackageTarget(pkg.pkgName, parentPkgUrl),
     subpath: pkg.subpath
   };
 }
 
-export function newPackageTarget (target: string, depName?: string): PackageTarget {
+export function newPackageTarget (target: string, parentPkgUrl: string, depName?: string): InstallTarget {
   let registry: string, name: string, ranges: any[];
 
   const registryIndex = target.indexOf(':');
   registry = registryIndex < 1 ? 'npm' : target.substr(0, registryIndex);
 
   if (registry === 'file')
-    throw new Error('TODO: file: dependency installs, installing ' + target);
+    return new URL(target.slice(registry.length + 1), parentPkgUrl);
 
   const versionIndex = target.lastIndexOf('@');
   if (versionIndex > registryIndex + 1) {

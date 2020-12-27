@@ -2,6 +2,8 @@ import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.ts';
 import { baseUrl } from '../common/url.ts';
 import { ImportMap } from "../tracemap/map.ts";
 import { isPackageTarget, toPackageTarget } from "../install/package.ts";
+import { pathToFileURL } from 'url';
+import process from 'process';
 
 export async function link (modules: string | string[], opts: TraceMapOptions): Promise<{
   changed: boolean,
@@ -20,7 +22,7 @@ export async function link (modules: string | string[], opts: TraceMapOptions): 
       await Promise.all(modules.map(async targetStr => {
         let module;
         if (isPackageTarget(targetStr)) {
-          const { alias, target, subpath } = await toPackageTarget(targetStr);
+          const { alias, target, subpath } = await toPackageTarget(targetStr, pathToFileURL(process.cwd() + '/').href);
           await traceMap.add(alias, target);
           module = alias + subpath.slice(1);
         }

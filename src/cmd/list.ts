@@ -1,12 +1,14 @@
 import resolver from '../install/resolver.ts';
 import { pkgToUrl, ExportsTarget, toPackageTarget, pkgUrlToNiceString } from '../install/package.ts';
 import { JspmError } from '../common/err.ts';
+import { pathToFileURL } from 'url';
+import process from 'process';
 
 export async function list (module: string): Promise<{
   resolved: string,
   exports: Record<string, ExportsTarget>
 }> {
-  const { target, subpath } = await toPackageTarget(module);
+  const { target, subpath } = await toPackageTarget(module, pathToFileURL(process.cwd() + '/').href);
 
   let pkgUrl: string;
   if (!(target instanceof URL)) {

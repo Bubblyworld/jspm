@@ -4,6 +4,7 @@ url = "."
 
 [package.deps]
 "@iarna/toml" = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
+cache = "./deps/cache"
 chalk = "https://ga.jspm.io/npm:chalk@4.1.0"
 crypto = "./core/dist|nodelibs/crypto"
 es-module-lexer = "https://ga.jspm.io/npm:es-module-lexer@0.3.26"

@@ -39,6 +39,7 @@
     "@rollup/plugin-node-resolve": "^10.0.0",
     "@vercel/ncc": "^0.24.1",
     "assert-diff": "^3.0.1",
+    "cache": "file:./deps/cache",
     "chalk": "^4.1.0",
     "clipboardy": "^2.3.0",
     "glob": "^7.1.6",
