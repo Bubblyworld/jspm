@@ -115,6 +115,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         break;
       }
 
+      case 'init': {
+        throw new JspmError('jspm init is a TODO');
+      }
+
       case 'link': {
         const { args, opts } = readFlags(rawArgs, {
           boolFlags: ['log', 'browser', 'production', 'node', 'freeze-lock', 'no-lock'],
@@ -153,6 +157,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           ok(`${changed ? 'Lockfile updated. ' : ''}Import map at ${opts.out} unchanged.`);
         }
         break;
+      }
+
+      case 'locate': {
+        throw new JspmError('jspm locate is a TODO');
       }
 
       case 'ls':
@@ -207,6 +215,9 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       case 'rem': {
         const { args } = readFlags(rawArgs);
         const { rem } = await import('./cmd/rem.ts');
+
+        spinner = await startSpinnerLog(log);
+        spinner.text = 'Removing ' + args.join(', ') + '...';
         const changed = await rem(args);
         if (changed)
           ok(`Removed ${args.join(', ')}.`);
@@ -216,7 +227,15 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       }
 
       case 'run': {
+        throw new JspmError('jspm run is a TODO');
+      }
 
+      case 'update': {
+        throw new JspmError('jspm update is a TODO');
+      }
+
+      case 'upgrade': {
+        throw new JspmError('jspm upgrade is a TODO');
       }
 
       case 'version':
@@ -252,7 +271,7 @@ function cmdHelp (cmd: string) {
 
 function cmdList (cmds: string[], doubleSpace = false) {
   const list: string[] = [];
-  let maxCmdLen = 28;
+  let maxCmdLen = 30;
   for (const cmd of cmds) {
     const [command, description] = help[cmd];
     list.push(command.padEnd(maxCmdLen + 2, ' ') + description + (doubleSpace ? '\n' : ''));
@@ -271,10 +290,10 @@ function usage () {
 `;
 
   return header + cmdList(highlightCommands, true) + `
-  ${chalk.bold('Global Options:')}
-     -z, --offline                Attempt an offline operation using the cache.
-         --log[=<name>,<name>]    Output debug logs with optional filtering.\n
   ${chalk.bold('Other Commands:\n') + cmdList(Object.keys(help).filter(x => !highlightCommands.includes(x)))}\n
+  ${chalk.bold('Global Options:')}
+     -z, --offline                  Attempt an offline operation using the cache
+         --log[=<name>,<name>]      Output debug logs with optional filtering\n
   Run "jspm help <cmd>" for help on a specific command.
 `;
 }
@@ -282,15 +301,14 @@ function usage () {
 const help: Record<string, [string, string] | [string, string, string]> = {
   'add': [
     'jspm add <package target>+',
-    'Add a package to the package.json dependencies', `
+    'Add a package to the package.json targets', `
     jspm add <package target>+
     
-    Options:
+  Options:
         --dev                 Add to devDependencies
         --peer                Add to peerDependencies
-    -l, --latest              If there is an existing lock resolution for this
-                              dependency or any of its transitive dependencies,
-                              ensure they are updated to their latest versions.
+    -l, --latest              Ensure installed resolutions are to their latest
+                              versions
 
   In addition, the full dependency graph is resolved and stored in the
   local jspm.lock lockfile, which is created if it does not exist.
@@ -335,32 +353,32 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     'Clear the jspm local URL cache', `
       jspm cc
 
-      ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}
+    ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}
 
-      Clears the jspm version cache.
+    Clears the jspm version cache.
 
-      When running under Deno, clears all jspm CDN URLs from the Deno cache.
-      When running under Node.js, clears all jspm CDN permacache URLs from the
+    * When running under Deno, clears all jspm CDN URLs from the Deno cache.
+    * When running under Node.js, clears all jspm CDN permacache URLs from the
       custom fetch cache.
     `
   ],
 
   'deno': [
     'jspm deno <module>',
-    'Execute "deno run" with jspm linking', `
+    'Execute "deno run" with jspm linkage', `
     jspm deno [Deno run options] <module> [Deno run args]
 
-    Options:
+  Options:
     -p, --production          Use "production" conditional module resolutions
-                              (defaults to "development").
-    -i, --install             Run a full install for any missing dependencies.
+                              (defaults to "development")
+    -i, --install             Run a full install for any missing dependencies
 
-    All Deno run options should be supported. See "deno help run".
+  All Deno run options should be supported. See "deno help run".
 
-    Internally, the module is first linked via "jspm link <module>" in order to
-    automaticaly construct a temporary import map to provide to Deno run.
+  Internally, the module is first linked via "jspm link <module>" in order to
+  automaticaly construct a temporary import map to provide to Deno run.
 
-    See "jspm help link" for more information on jspm just-in-time linking.
+  See "jspm help link" for more information on jspm just-in-time linking.
 
   ${chalk.bold('Example:')}
     
@@ -368,15 +386,20 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     ${indent(printFrame(`import figlet from 'figlet';\n\nconsole.log(figlet.textSync('jspm is awesome')));`), '    ')}
 
     $ jspm deno app.ts
-    > Yay
-  `
+    > Yay`
   ],
 
   'help': [
-    'jspm help [<cmd>]',
+    'jspm help [cmd]',
     'Help on jspm commands', `
-    jspm help <cmd>            GetH on a specific command
-    jspm help --commands/-c    List all commands`
+    jspm help <cmd>            Get help on a specific command`
+  ],
+
+  'init': [
+    'jspm init [dir]',
+    'Initialize a new jspm project', `
+    jspm init [dir]
+  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
   ],
 
   'link': [
@@ -384,19 +407,19 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     'Link a module for execution', `
     jspm link [module]+
 
-    Traces the given modules and links them using the lockfile dependency
-    resolutions, outputting the corresponding import map for the subgraph.
+  Traces the given modules and links them using the lockfile dependency
+  resolutions, outputting the corresponding import map for the subgraph.
 
-    Linking will use the local lockfile by default, including persisting
-    any new resolutions to the lockfile, unless specified otherwise via the
-    --freeze-lock or --no-lock flags.
+  Linking will use the local lockfile by default, including persisting
+  any new resolutions to the lockfile, unless specified otherwise via the
+  --freeze-lock or --no-lock flags.
 
-    The default link environment is "browser", "development".
+  The default link environment is "browser", "development".
 
-    To fully link for all possibly dependency imports, use "jspm link"
-    without any module arguments.
+  To fully link for all possibly dependency imports, use "jspm link"
+  without any module arguments.
 
-    Optionss
+  Options:
     -d, --deno                Resolve modules for the "deno" environment.
     -p, --production          Resolve modules the "production" environment
                               (defaults to "development").
@@ -405,9 +428,9 @@ const help: Record<string, [string, string] | [string, string, string]> = {
         --no-lock             Ignore lockfile resolutions entirely.
         [--env=custom]+       Resolve modules for custom environment names.
 
-    For more information on how module resolution works and the way conditional
-    environment resolution applies, see the JSPM module resolution guide at
-    https://jspm.org/cli/resolution`
+  For more information on how module resolution works and the way conditional
+  environment resolution applies, see the JSPM module resolution guide at
+  https://jspm.org/cli/resolution`
   ],
 
   'ls': [
@@ -415,12 +438,12 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     'List the exports of a package', `
     jspm ls <package target>[/subpath]
 
-    Resolves the package target to an exact version, and lists the "exports"
-    field exported subpaths and resolutions for a package, optionally filtered
-    to specific exports subpaths.
+  Resolves the package target to an exact version, and lists the "exports"
+  field exported subpaths and resolutions for a package, optionally filtered
+  to specific exports subpaths.
 
-    For more information on the package "exports" field, see
-    https://jspm.org/cli#package-exports.
+  For more information on the package "exports" field, see
+  https://jspm.org/cli#package-exports.
 
   ${chalk.bold('Example:')}
 
@@ -439,7 +462,7 @@ const help: Record<string, [string, string] | [string, string, string]> = {
 
   'rem': [
     'jspm rem <pkg>',
-    'Remove a given package from the package.json file', `
+    'Remove a given package from the package.json', `
     jspm rem <pkg>+
 
   ${chalk.bold('Example:')}
@@ -453,12 +476,50 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     ${indent(printFrame(JSON.stringify({ dependencies: {}}, null, 2)), '    ')}`
   ],
 
+  'locate': [
+    'jspm locate <package target>',
+    'Locate the exact URL of a module or asset', `
+    jspm locate <package target>
+
+  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
+  ],
+
   'run': [
     'jspm run <script>',
     'Run a package.json script', `
     jspm run <script>
 
-    ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
+  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
+  ],
+
+  'update': [
+    'jspm update <package target>*',
+    'Update a dependency', `
+    jspm update <package target>*
+
+  Updates the provided dependencies, by default runs a full update of all
+  dependencies to their install ranges.  
+    
+  Optionally filters by specific packages and package ranges, and applying
+  to all dependencies of those names and ranges in the install tree.
+
+  If a package is not found, an error is thrown.
+
+  To update packages through major / breaking changes, use upgrade instead.
+
+  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
+  ],
+
+  'upgrade': [
+    'jspm upgrade <name>*',
+    'Upgrade a top-level dependency', `
+    jspm upgrade <name>*
+
+  Upgrades the package.json dependencies by bumping the major, minor or patch
+  version, depending on whether the package.json dependency ranges are
+  based on major, minor or patch ranges.
+
+  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
   ],
 
   'version': [

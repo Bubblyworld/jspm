@@ -71,7 +71,7 @@ export default class TraceMap {
   added = new Map<string, InstallTarget>();
   pjson: any | undefined;
 
-  constructor (mapBase: URL, opts: TraceMapOptions) {
+  constructor (mapBase: URL, opts: TraceMapOptions = {}) {
     this.mapBase = mapBase;
     this.opts = opts;
     if (this.opts.env)
@@ -177,6 +177,8 @@ export default class TraceMap {
             }
           }
         });
+        if (pjsonChanged)
+          this.opts.fullInstall = true;
       }
 
       // prune the lockfile to the include traces only
@@ -189,13 +191,6 @@ export default class TraceMap {
 
         // construct the full map
         if (this.opts.fullMap) {
-          // add all builtins as top-level imports if not in existing deps
-          for (const pkgName of builtinSet) {
-            if (pkgName[0] === '_' || existingBuiltins.has(pkgName) || deps.includes(pkgName))
-              continue;
-            const resolution = await this.installer!.install(pkgName, this.pjsonBase!.href);
-            this.addAllPkgMappings(pkgName, resolution, this.env, null);
-          }
           await Promise.all(installs.map(async ([name, pkgUrl]) => {
             await this.addAllPkgMappings(name, this.installer!.installs[pkgUrl][name], this.env, pkgUrl === this.mapBase!.href ? null : pkgUrl);
           }));

@@ -13,7 +13,6 @@ export async function add (targets: string | string[], opts: TraceMapOptions): P
 
   const finishInstall = await traceMap.startInstall();
   try {
-    opts.fullInstall = true;
     const installed = await Promise.all(targets.map(async targetStr => {
       const { alias, target, subpath } = await toPackageTarget(targetStr, pathToFileURL(process.cwd() + '/').href);
       if (subpath !== '.')
