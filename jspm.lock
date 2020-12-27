@@ -3,6 +3,7 @@
 url = "."
 
 [package.deps]
+"@iarna/toml" = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
 cache = "./deps/cache"
 chalk = "https://ga.jspm.io/npm:chalk@4.1.0"
 crypto = "./core/dist|nodelibs/crypto"
@@ -17,6 +18,13 @@ process = "./core/dist|nodelibs/process"
 rimraf = "https://ga.jspm.io/npm:rimraf@3.0.2"
 sver = "https://ga.jspm.io/npm:sver@1.8.3"
 url = "./core/dist|nodelibs/url"
+
+[[package]]
+url = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
+
+[package.deps]
+process = "./core/dist|nodelibs/process"
+stream = "./core/dist|nodelibs/stream"
 
 [[package]]
 url = "https://ga.jspm.io/npm:@npmcli/move-file@1.0.1"

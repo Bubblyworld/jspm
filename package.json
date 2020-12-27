@@ -24,7 +24,8 @@
   "main": "./lib/tracemap.js",
   "dependencies": {
     "es-module-lexer": "0.3.26",
-    "sver": "^1.8.3"
+    "sver": "^1.8.3",
+    "@iarna/toml": "^3.0.0"
   },
   "devDependencies": {
     "cache": "file:./deps/cache",

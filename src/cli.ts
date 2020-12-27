@@ -70,15 +70,21 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         console.log(`${chalk.bold.yellow('warm')} TODO: jspm cache clear currently unimplemented.`);
       }
 
+      case 'checkout': {
+
+      }
+
       case 'deno': {
         const execArgIndex = rawArgs.findIndex(x => x[0] !== '-');
         if (execArgIndex === -1)
           throw new JspmError(`Expected a module to execute.`);
 
+        const jspmFlags = ['freeze-lock', 'no-lock', 'production', 'install'];
+
         // Deno flags inlined because we merge in jspm flag handling here
         const { opts, args } = readFlags(rawArgs.slice(0, execArgIndex), {
           boolFlags: ['log', 'allow-all', 'allow-env', 'allow-hrtime', 'allow-net', 'allow-plugin',
-              'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'no-check', 'production', 'freeze-lock', 'no-lock'],
+              'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'no-check', ...jspmFlags],
           strFlags: ['log', 'allow-net', 'allow-read', 'allow-write', 'inspect', 'inspect-brk',
               'log-level', 'reload', 'seed', 'v8-flags'],
           aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload', 'x': 'freeze-lock' }
@@ -92,15 +98,16 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
         const denoFlags: string[] = [];
         for (const flag of Object.keys(opts)) {
-          if (flag === 'freezeLock' || flag === 'noLock' || flag === 'production')
+          const asSnakeCase = fromCamelCase(flag);
+          if (jspmFlags.includes(asSnakeCase))
             continue;
           if (typeof opts[flag] === 'boolean')
-            denoFlags.push('--' + fromCamelCase(flag));
+            denoFlags.push('--' + asSnakeCase);
           if (typeof opts[flag] === 'string')
-            denoFlags.push('--' + fromCamelCase(flag) + '=' + opts[flag]);
+            denoFlags.push('--' + asSnakeCase + '=' + opts[flag]);
         }
         const { deno } = await import('./cmd/deno.ts');
-        const code = await deno(rawArgs[execArgIndex], denoFlags, args);
+        const code = await deno(rawArgs[execArgIndex], denoFlags, args, opts);
         return code;
       }
 
@@ -351,15 +358,23 @@ const help: Record<string, [string, string] | [string, string, string]> = {
   'cc': [
     'jspm cc',
     'Clear the jspm local URL cache', `
-      jspm cc
+    jspm cc
 
-    ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}
+  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}
 
-    Clears the jspm version cache.
+  Clears the jspm version cache.
 
-    * When running under Deno, clears all jspm CDN URLs from the Deno cache.
-    * When running under Node.js, clears all jspm CDN permacache URLs from the
-      custom fetch cache.
+  * When running under Deno, clears all jspm CDN URLs from the Deno cache.
+  * When running under Node.js, clears all jspm CDN permacache URLs from the
+    custom fetch cache.
+    `
+  ],
+
+  'checkout': [
+    'jspm checkout <package target>',
+    'Check out a dependency for local vendoring', `
+    jspm checkout <package target>
+
     `
   ],
 
@@ -399,6 +414,7 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     'jspm init [dir]',
     'Initialize a new jspm project', `
     jspm init [dir]
+  
   ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
   ],
 

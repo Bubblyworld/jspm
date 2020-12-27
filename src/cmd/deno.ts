@@ -9,10 +9,10 @@ import { isPackageTarget, toPackageTarget } from "../install/package.ts";
 import process from 'process';
 import { pathToFileURL } from 'url';
 
-function computeMapHash (path: string) {
-  const mapPrefix = createHash('sha256').update(path).digest().toString('base64').replace(/\//g, '-').slice(0, 8);
+function computeMapHash (projectBase: string, moduleUrl: string) {
+  const mapPrefix = createHash('sha256').update(moduleUrl).digest().toString('base64').replace(/\//g, '-').slice(0, 8);
   try {
-    var mapSuffix = createHash('sha256').update(readFileSync(path + '/package.json')).update(readFileSync(path + '/jspm.lock')).digest().toString('base64').replace(/\//g, '-').slice(0, 16);
+    var mapSuffix = createHash('sha256').update(readFileSync(projectBase + '/package.json')).update(readFileSync(projectBase + '/jspm.lock')).digest().toString('base64').replace(/\//g, '-').slice(0, 16);
   }
   catch {
     return {};
@@ -34,7 +34,7 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
   let mapFile: string | undefined;
 
   if (!opts.install) {
-    const { mapPrefix, mapSuffix } = computeMapHash(process.cwd());
+    const { mapPrefix, mapSuffix } = computeMapHash(process.cwd(), targetStr);
     if (mapSuffix) {
       try {
         const existingMap = readFileSync(tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap').toString();
@@ -46,6 +46,8 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
         return await runCmd(`deno run --unstable --importmap ${mapFile} ${flags.join(' ')} ${targetStr} ${args.join(' ')}`);
     }
   }
+
+  opts.save = true;
 
   const traceMap = new TraceMap(baseUrl, opts);
   const finishInstall = await traceMap.startInstall();
@@ -67,7 +69,7 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
     throw e;
   }
   const map = traceMap.map.toString();
-  const { mapPrefix, mapSuffix } = computeMapHash(process.cwd());
+  const { mapPrefix, mapSuffix } = computeMapHash(process.cwd(), targetStr);
   mapFile = tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap';
   writeFileSync(mapFile, map);
   const code = await runCmd(`deno run --unstable --importmap ${mapFile} ${flags.join(' ')} ${resolved} ${args.join(' ')}`);
