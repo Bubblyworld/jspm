@@ -76,12 +76,12 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           throw new JspmError(`Expected a module to execute.`);
 
         // Deno flags inlined because we merge in jspm flag handling here
-        const { opts } = readFlags(rawArgs.slice(0, execArgIndex), {
+        const { opts, args } = readFlags(rawArgs.slice(0, execArgIndex), {
           boolFlags: ['log', 'allow-all', 'allow-env', 'allow-hrtime', 'allow-net', 'allow-plugin',
-              'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'check', 'production', 'install'],
+              'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'no-check', 'production', 'freeze-lock', 'no-lock'],
           strFlags: ['log', 'allow-net', 'allow-read', 'allow-write', 'inspect', 'inspect-brk',
               'log-level', 'reload', 'seed', 'v8-flags'],
-          aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload' }
+          aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload', 'x': 'freeze-lock' }
         });
 
         opts.env = ['deno', 'node'];
@@ -92,7 +92,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
         const denoFlags: string[] = [];
         for (const flag of Object.keys(opts)) {
-          if (flag === 'log')
+          if (flag === 'freezeLock' || flag === 'noLock' || flag === 'production')
             continue;
           if (typeof opts[flag] === 'boolean')
             denoFlags.push('--' + fromCamelCase(flag));
@@ -100,7 +100,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
             denoFlags.push('--' + fromCamelCase(flag) + '=' + opts[flag]);
         }
         const { deno } = await import('./cmd/deno.ts');
-        const code = await deno(rawArgs[execArgIndex], denoFlags, rawArgs.slice(execArgIndex + 1));
+        const code = await deno(rawArgs[execArgIndex], denoFlags, args);
         return code;
       }
 
@@ -117,10 +117,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
       case 'link': {
         const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['log', 'browser', 'production', 'node'],
+          boolFlags: ['log', 'browser', 'production', 'node', 'freeze-lock', 'no-lock'],
           strFlags: ['log', 'out'],
           arrFlags: ['env'],
-          aliases: { 'o': 'out', 'b': 'browser', 'p': 'production' }
+          aliases: { 'o': 'out', 'b': 'browser', 'p': 'production', 'x': 'freeze-lock' }
         });
 
         opts.env = [...opts.env as string[] || [], ...opts.browser ? ['browser'] : opts.node ? ['node'] : ['deno', 'node']];
@@ -252,11 +252,7 @@ function cmdHelp (cmd: string) {
 
 function cmdList (cmds: string[], doubleSpace = false) {
   const list: string[] = [];
-  let maxCmdLen = 0;
-  for (const cmd of cmds) {
-    const [command] = help[cmd];
-    maxCmdLen = Math.max(command.length, maxCmdLen);
-  }
+  let maxCmdLen = 28;
   for (const cmd of cmds) {
     const [command, description] = help[cmd];
     list.push(command.padEnd(maxCmdLen + 2, ' ') + description + (doubleSpace ? '\n' : ''));
@@ -275,7 +271,10 @@ function usage () {
 `;
 
   return header + cmdList(highlightCommands, true) + `
-  ${chalk.bold('Command List:\n') + cmdList(Object.keys(help).filter(x => !highlightCommands.includes(x)))}\n
+  ${chalk.bold('Global Options:')}
+     -z, --offline                Attempt an offline operation using the cache.
+         --log[=<name>,<name>]    Output debug logs with optional filtering.\n
+  ${chalk.bold('Other Commands:\n') + cmdList(Object.keys(help).filter(x => !highlightCommands.includes(x)))}\n
   Run "jspm help <cmd>" for help on a specific command.
 `;
 }
@@ -289,7 +288,7 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     Options:
         --dev                 Add to devDependencies
         --peer                Add to peerDependencies
-    -u, --update              If there is an existing lock resolution for this
+    -l, --latest              If there is an existing lock resolution for this
                               dependency or any of its transitive dependencies,
                               ensure they are updated to their latest versions.
 
@@ -388,6 +387,10 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     Traces the given modules and links them using the lockfile dependency
     resolutions, outputting the corresponding import map for the subgraph.
 
+    Linking will use the local lockfile by default, including persisting
+    any new resolutions to the lockfile, unless specified otherwise via the
+    --freeze-lock or --no-lock flags.
+
     The default link environment is "browser", "development".
 
     To fully link for all possibly dependency imports, use "jspm link"
@@ -398,6 +401,8 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     -p, --production          Resolve modules the "production" environment
                               (defaults to "development").
         --node                Resolve modules for the "node" environment.
+    -x  --freeze-lock         Do not make any changes to the lockfile.
+        --no-lock             Ignore lockfile resolutions entirely.
         [--env=custom]+       Resolve modules for custom environment names.
 
     For more information on how module resolution works and the way conditional

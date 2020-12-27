@@ -10,7 +10,12 @@ import process from 'process';
 
 function computeMapHash (path: string) {
   const mapPrefix = createHash('sha256').update(path).digest().toString('base64').replace(/\//g, '-').slice(0, 8);
-  const mapSuffix = createHash('sha256').update(readFileSync(path + '/package.json')).update(readFileSync(path + '/jspm.lock')).digest().toString('base64').replace(/\//g, '-').slice(0, 16);
+  try {
+    var mapSuffix = createHash('sha256').update(readFileSync(path + '/package.json')).update(readFileSync(path + '/jspm.lock')).digest().toString('base64').replace(/\//g, '-').slice(0, 16);
+  }
+  catch {
+    return {};
+  }
   return { mapPrefix, mapSuffix };
 }
 
@@ -29,14 +34,16 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
 
   if (!opts.install) {
     const { mapPrefix, mapSuffix } = computeMapHash(process.cwd());
-    try {
-      const existingMap = readFileSync(tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap').toString();
-      // JSON.parse(existingMap);
-      mapFile = tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap';
+    if (mapSuffix) {
+      try {
+        const existingMap = readFileSync(tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap').toString();
+        // JSON.parse(existingMap);
+        mapFile = tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap';
+      }
+      catch {}
+      if (mapFile)
+        return await runCmd(`deno run --unstable --importmap ${mapFile} ${flags.join(' ')} ${targetStr} ${args.join(' ')}`);
     }
-    catch {}
-    if (mapFile)
-      return await runCmd(`deno run --unstable --no-check --importmap ${mapFile} ${flags.join(' ')} ${targetStr} ${args.join(' ')}`);
   }
 
   const traceMap = new TraceMap(baseUrl, opts);
@@ -62,6 +69,6 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
   const { mapPrefix, mapSuffix } = computeMapHash(process.cwd());
   mapFile = tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap';
   writeFileSync(mapFile, map);
-  const code = await runCmd(`deno run --unstable --no-check --importmap ${mapFile} ${flags.join(' ')} ${resolved} ${args.join(' ')}`);
+  const code = await runCmd(`deno run --unstable --importmap ${mapFile} ${flags.join(' ')} ${resolved} ${args.join(' ')}`);
   return code;
 }

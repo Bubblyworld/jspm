@@ -320,7 +320,7 @@ export default class TraceMap {
     traceEntry.system = !!system;
     traceEntry.size = size;
     
-    let allDeps = deps;
+    let allDeps: string[] = deps;
     if (dynamicDeps.length && !this.opts.static) {
       allDeps = [...deps];
       for (const dep of dynamicDeps) {

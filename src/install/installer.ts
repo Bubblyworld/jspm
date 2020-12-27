@@ -25,21 +25,21 @@ export interface PackageInstallRange {
 export type InstallTarget = PackageTarget | URL;
 
 export interface InstallOptions {
-  // whether existing resolutions should be locked
-  lock?: boolean;
-  // force use latest versions for everything
-  update?: boolean;
+  // do not modify the lockfile
+  freezeLock?: boolean;
+  // do not use the lockfile at all
+  noLock?: boolean;
+  // force use latest versions for everything we touch
+  latest?: boolean;
 
   // if a resolution is not in its expected range
   // / expected URL (usually due to manual user edits),
   // force override a new install
-  // when clean: true is set, applies clean to unknowns too
   force?: boolean;
   // stdlib target
   stdlib?: string;
 
   cdnUrl?: string;
-  lockfile?: boolean | 'read';
 };
 
 export class Installer {
@@ -59,7 +59,7 @@ export class Installer {
     if (opts.cdnUrl)
       this.cdnUrl = opts.cdnUrl;
     this.lockfilePath = fileURLToPath(this.installBaseUrl + 'jspm.lock');
-    const { resolutions } = this.opts.lockfile === false ? { resolutions: {} } : lock.loadVersionLock(this.lockfilePath);
+    const { resolutions } = this.opts.noLock === true ? { resolutions: {} } : lock.loadVersionLock(this.lockfilePath);
     this.installs = resolutions;
 
     if (opts.stdlib) {
@@ -82,7 +82,7 @@ export class Installer {
     this.newInstalls = false;
     this.currentInstall = new Promise(resolve => {
       finishInstall = (success: boolean) => {
-        const changed = success && (this.opts.lockfile === false || this.opts.lockfile === 'read' || lock.saveVersionLock(this.installs, this.lockfilePath));
+        const changed = success && (this.opts.freezeLock === true || this.opts.noLock === true || lock.saveVersionLock(this.installs, this.lockfilePath));
         this.installing = false;
         resolve();
         return changed;
@@ -121,7 +121,7 @@ export class Installer {
       return pkgUrl;
     }
 
-    if (this.opts.lock) {
+    if (this.opts.freezeLock) {
       const existingInstall = await this.getBestMatch(target);
       if (existingInstall) {
         log('install', `${pkgName} ${pkgScope} -> ${existingInstall.registry}:${existingInstall.name}@${existingInstall.version}`);
@@ -135,8 +135,8 @@ export class Installer {
     const installed = await this.getInstalledPackages(target.registry, target.name);
     const restrictedToPkg = await this.tryUpgradePackagesTo(latest, installed);
 
-    // cannot upgrade to latest -> stick with existing resolution
-    if (restrictedToPkg && !this.opts.update) {
+    // cannot upgrade to latest -> stick with existing resolution (if compatible)
+    if (restrictedToPkg && !this.opts.latest) {
       log('install', `${pkgName} ${pkgScope} -> ${restrictedToPkg.registry}:${restrictedToPkg.name}@${restrictedToPkg.version}`);
       const pkgUrl = pkgToUrl(restrictedToPkg, this.cdnUrl);
       lock.setResolution(this.installs, pkgName, pkgScope, pkgUrl);
@@ -208,7 +208,7 @@ export class Installer {
 
   // upgrade any existing packages to this package if possible
   private tryUpgradePackagesTo (pkg: ExactPackage, installed: PackageInstallRange[]): ExactPackage | undefined {
-    if (this.opts.lock) return;
+    if (this.opts.freezeLock) return;
     const pkgVersion = new Semver(pkg.version);
     let hasUpgrade = false;
     for (const version of new Set(installed.map(({ pkg }) => pkg.version))) {
@@ -226,7 +226,7 @@ export class Installer {
         }
       }
       if (hasVersionUpgrade) hasUpgrade = true;
-      if (hasUpgrade || this.opts.update) {
+      if (hasUpgrade || this.opts.latest) {
         for (const { pkg, install } of installed) {
           if (pkg.version !== version) continue;
           lock.setResolution(this.installs, install.name, install.pkgUrl, pkgToUrl(pkg, this.cdnUrl));

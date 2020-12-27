@@ -16,17 +16,17 @@ sver = "https://ga.jspm.io/npm:sver@1.8.3"
 url = "./core/dist|nodelibs/url"
 
 [[package]]
-url = "https://ga.jspm.io/npm:es-module-lexer@0.3.26"
-
-[package.deps]
-buffer = "./core/dist|nodelibs/buffer"
-
-[[package]]
 url = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
 
 [package.deps]
 process = "./core/dist|nodelibs/process"
 stream = "./core/dist|nodelibs/stream"
+
+[[package]]
+url = "https://ga.jspm.io/npm:ansi-styles@4.3.0"
+
+[package.deps]
+color-convert = "https://ga.jspm.io/npm:color-convert@2.0.1"
 
 [[package]]
 url = "https://ga.jspm.io/npm:chalk@4.1.0"
@@ -36,10 +36,28 @@ ansi-styles = "https://ga.jspm.io/npm:ansi-styles@4.3.0"
 supports-color = "https://ga.jspm.io/npm:supports-color@7.2.0"
 
 [[package]]
-url = "https://ga.jspm.io/npm:sver@1.8.3"
+url = "https://ga.jspm.io/npm:color-convert@2.0.1"
 
 [package.deps]
-semver = "https://ga.jspm.io/npm:semver@6.3.0"
+color-name = "https://ga.jspm.io/npm:color-name@1.1.4"
+
+[[package]]
+url = "https://ga.jspm.io/npm:es-module-lexer@0.3.26"
+
+[package.deps]
+buffer = "./core/dist|nodelibs/buffer"
+
+[[package]]
+url = "https://ga.jspm.io/npm:has-flag@4.0.0"
+
+[package.deps]
+process = "./core/dist|nodelibs/process"
+
+[[package]]
+url = "https://ga.jspm.io/npm:semver@6.3.0"
+
+[package.deps]
+process = "./core/dist|nodelibs/process"
 
 [[package]]
 url = "https://ga.jspm.io/npm:supports-color@7.2.0"
@@ -51,25 +69,7 @@ process = "./core/dist|nodelibs/process"
 tty = "./core/dist|nodelibs/tty"
 
 [[package]]
-url = "https://ga.jspm.io/npm:semver@6.3.0"
+url = "https://ga.jspm.io/npm:sver@1.8.3"
 
 [package.deps]
-process = "./core/dist|nodelibs/process"
-
-[[package]]
-url = "https://ga.jspm.io/npm:ansi-styles@4.3.0"
-
-[package.deps]
-color-convert = "https://ga.jspm.io/npm:color-convert@2.0.1"
-
-[[package]]
-url = "https://ga.jspm.io/npm:color-convert@2.0.1"
-
-[package.deps]
-color-name = "https://ga.jspm.io/npm:color-name@1.1.4"
-
-[[package]]
-url = "https://ga.jspm.io/npm:has-flag@4.0.0"
-
-[package.deps]
-process = "./core/dist|nodelibs/process"
+semver = "https://ga.jspm.io/npm:semver@6.3.0"

@@ -61,6 +61,9 @@ export async function startSpinnerLog (log: boolean | string) {
     spinner.start();
   }
   else {
+    spinner = {
+      stop () {}
+    };
     (async () => {
       const debugTypes = typeof log === 'string' ? log.split(',') : [];
       for await (const log of logStream()) {

@@ -99,6 +99,7 @@ export function saveVersionLock (resolutions: LockResolutions, lockFile: string)
       }).sort(([a], [b]) => a.localeCompare(b)))
     } : { url });
   }
+  packages.sort(({ url: a }, { url: b }) => a.localeCompare(b));
   let original;
   try {
     original = readFileSync(lockFile).toString();
