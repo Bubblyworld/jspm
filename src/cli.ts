@@ -102,7 +102,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
               'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'no-check', ...jspmFlags],
           strFlags: ['log', 'allow-net', 'allow-read', 'allow-write', 'inspect', 'inspect-brk',
               'log-level', 'reload', 'seed', 'v8-flags'],
-          aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload', 'x': 'freeze-lock' }
+          aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload', 'x': 'freeze-lock', 'i': 'install' }
         });
 
         opts.env = ['deno', 'node'];

@@ -160,7 +160,7 @@ export default class TraceMap {
     }
   }
 
-  async trace (specifier: string, parentUrl: URL = this.mapBase, env = this.env): Promise<string> {
+  async trace (specifier: string, parentUrl: URL = this.mapBase, env = ['import', ...this.env]): Promise<string> {
     const parentPkgUrl = await resolver.getPackageBase(parentUrl.href);
     if (!parentPkgUrl)
       throwInternalError();
@@ -213,7 +213,7 @@ export default class TraceMap {
       let [pkgUrl, subpathFilter] = installed.split('|');
       if (subpathFilter)
         pkgUrl += '/';
-      const exports = await resolver.resolveExports(pkgUrl, this.env, subpathFilter);
+      const exports = await resolver.resolveExports(pkgUrl, env, subpathFilter);
       const match = getMapMatch(subpath, exports);
       if (!match)
         throw new JspmError(`No '${subpath}' exports subpath defined in ${pkgUrl} resolving ${pkgName}${importedFrom(parentUrl)}.`);
