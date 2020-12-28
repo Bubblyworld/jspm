@@ -5,14 +5,11 @@ import { builtinModules } from 'module';
 import { fileURLToPath } from 'url';
 import * as lock from "./lock.ts";
 import resolver from "./resolver.ts";
-import { ExactPackage, newPackageTarget, PackageTarget, pkgToUrl, parseCdnPkg } from "./package.ts";
+import { ExactPackage, newPackageTarget, PackageTarget } from "./package.ts";
 import { isURL, importedFrom } from "../common/url.ts";
-import { throwInternalError, JspmError } from "../common/err.ts";
+import { throwInternalError } from "../common/err.ts";
 import { DependenciesField, updatePjson } from './pjson.ts';
 import path from 'path';
-
-// should import from resolver.ts but deno not happy due to esm bugs
-const cdnUrls = ['https://ga.jspm.io/', 'https://system.jspm.io/', 'https://deno.land/x/', 'https://deno.land/'];
 
 export const builtinSet = new Set<string>(builtinModules);
 
@@ -43,8 +40,6 @@ export interface InstallOptions {
   reset?: boolean;
   // stdlib target
   stdlib?: string;
-
-  cdnUrl?: string;
   
   // whether the install is a full dependency install
   // or simply a trace install
@@ -66,14 +61,11 @@ export class Installer {
   stdlibTarget: InstallTarget = new URL('../../core/dist', import.meta.url);
   installBaseUrl: string;
   lockfilePath: string;
-  cdnUrl = 'https://ga.jspm.io/';
   added = new Map<string, InstallTarget>();
 
   constructor (baseUrl: URL, opts: InstallOptions) {
     this.installBaseUrl = baseUrl.href;
     this.opts = opts;
-    if (opts.cdnUrl)
-      this.cdnUrl = opts.cdnUrl;
     this.lockfilePath = fileURLToPath(this.installBaseUrl + 'jspm.lock');
     const { resolutions } = this.opts.noLock === true ? { resolutions: {} } : lock.loadVersionLock(this.lockfilePath);
     this.installs = resolutions;
@@ -186,7 +178,7 @@ export class Installer {
           return false;
         throw new Error('No installation found to replace.');
       }
-      targetUrl = pkgToUrl(pkg, this.cdnUrl);
+      targetUrl = resolver.pkgToUrl(pkg);
     }
 
     let replaced = false;
@@ -229,26 +221,26 @@ export class Installer {
       const existingInstall = this.getBestMatch(target);
       if (existingInstall) {
         log('install', `${pkgName} ${pkgScope} -> ${existingInstall.registry}:${existingInstall.name}@${existingInstall.version}`);
-        const pkgUrl = pkgToUrl(existingInstall, this.cdnUrl);
+        const pkgUrl = resolver.pkgToUrl(existingInstall);
         lock.setResolution(this.installs, pkgName, pkgScope, pkgUrl);
         return pkgUrl;
       }
     }
 
-    const latest = await resolver.resolveLatestTarget(target, parentUrl);
+    const latest = await resolver.resolveLatestTarget(target, false, parentUrl);
     const installed = await this.getInstalledPackages(target);
     const restrictedToPkg = await this.tryUpgradePackagesTo(latest, installed);
 
     // cannot upgrade to latest -> stick with existing resolution (if compatible)
     if (restrictedToPkg && !this.opts.latest) {
       log('install', `${pkgName} ${pkgScope} -> ${restrictedToPkg.registry}:${restrictedToPkg.name}@${restrictedToPkg.version}`);
-      const pkgUrl = pkgToUrl(restrictedToPkg, this.cdnUrl);
+      const pkgUrl = resolver.pkgToUrl(restrictedToPkg);
       lock.setResolution(this.installs, pkgName, pkgScope, pkgUrl);
       return pkgUrl;
     }
 
     log('install', `${pkgName} ${pkgScope} -> ${latest.registry}:${latest.name}@${latest.version}`);
-    const pkgUrl = pkgToUrl(latest, this.cdnUrl);
+    const pkgUrl = resolver.pkgToUrl(latest);
     lock.setResolution(this.installs, pkgName, pkgScope, pkgUrl);
     return pkgUrl;
   }
@@ -297,7 +289,7 @@ export class Installer {
   private getBestMatch (matchPkg: PackageTarget): ExactPackage | null {
     let bestMatch: ExactPackage | null = null;
     for (const pkgUrl of Object.keys(this.installs)) {
-      const { pkg } = parseCdnPkg(pkgUrl, cdnUrls) || {};
+      const pkg = resolver.parseUrlPkg(pkgUrl);
       if (pkg && this.inRange(pkg, matchPkg)) {
         if (bestMatch)
           bestMatch = new Semver(bestMatch.version).compare(pkg.version) === -1 ? pkg : bestMatch;
@@ -335,7 +327,7 @@ export class Installer {
       if (hasUpgrade || this.opts.latest) {
         for (const { pkg, install } of installed) {
           if (pkg.version !== version) continue;
-          lock.setResolution(this.installs, install.name, install.pkgUrl, pkgToUrl(pkg, this.cdnUrl));
+          lock.setResolution(this.installs, install.name, install.pkgUrl, resolver.pkgToUrl(pkg));
         }
       }
     }

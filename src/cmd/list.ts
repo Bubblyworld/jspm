@@ -1,5 +1,5 @@
 import resolver from '../install/resolver.ts';
-import { pkgToUrl, ExportsTarget, toPackageTarget, pkgUrlToNiceString } from '../install/package.ts';
+import { ExportsTarget, toPackageTarget, pkgUrlToNiceString } from '../install/package.ts';
 import { JspmError } from '../common/err.ts';
 import { pathToFileURL } from 'url';
 import process from 'process';
@@ -12,8 +12,8 @@ export async function list (module: string): Promise<{
 
   let pkgUrl: string;
   if (!(target instanceof URL)) {
-    const resolved = await resolver.resolveLatestTarget(target);
-    pkgUrl = pkgToUrl(resolved, 'https://ga.jspm.io/');
+    const resolved = await resolver.resolveLatestTarget(target, false);
+    pkgUrl = resolver.pkgToUrl(resolved);
   }
   else {
     pkgUrl = target.href;

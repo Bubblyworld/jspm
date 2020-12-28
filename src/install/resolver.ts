@@ -1,4 +1,4 @@
-import { ExactPackage, PackageConfig, PackageTarget, parseCdnPkg, pkgToUrl, ExportsTarget } from './package.ts';
+import { ExactPackage, PackageConfig, PackageTarget, ExportsTarget } from './package.ts';
 import { JspmError, throwInternalError } from '../common/err.ts';
 import { log } from '../common/log.ts';
 import { fetch } from '../common/fetch.ts';
@@ -10,19 +10,9 @@ import { existsSync, writeFileSync } from 'fs';
 import mkdirp from 'mkdirp';
 import { Buffer } from 'buffer';
 import path from 'path';
+import { providers, registryProviders } from '../providers/index.ts';
 
-export function pkgToLookupUrl (pkg: ExactPackage, edge = false) {
-  return `https://ga.jspm.io/${pkg.registry}:${pkg.name}${pkg.version != undefined ? '@' + pkg.version : edge ? '@' : ''}`;
-}
-
-export const cdnUrls = ['https://ga.jspm.io/', 'https://system.jspm.io/', 'https://deno.land/x/', 'https://deno.land/'];
 export class Resolver {
-  resolveCache: Record<string, {
-    latest: Promise<ExactPackage | null>;
-    majors: Record<string, Promise<ExactPackage | null>>;
-    minors: Record<string, Promise<ExactPackage | null>>;
-    tags: Record<string, Promise<ExactPackage | null>>;
-  }> = {};
   pcfgPromises: Record<string, Promise<void>> = Object.create(null);
   pcfgs: Record<string, PackageConfig | null> = Object.create(null);
   fetchOpts: any;
@@ -30,10 +20,21 @@ export class Resolver {
     this.fetchOpts = fetchOpts;
   }
 
+  parseUrlPkg (url: string): ExactPackage | undefined {
+    for (const cdnUrl of Object.keys(providers)) {
+      if (url.startsWith(cdnUrl))
+        return providers[cdnUrl].parseUrlPkg.call(this, url);
+    }
+  }
+
+  pkgToUrl (pkg: ExactPackage): string {
+    return registryProviders[pkg.registry].pkgToUrl.call(this, pkg);
+  }
+
   async getPackageBase (url: string) {
-    const cdnPkg = parseCdnPkg(url, cdnUrls);
-    if (cdnPkg)
-      return pkgToUrl(cdnPkg.pkg, cdnPkg.cdnUrl);
+    const pkg = this.parseUrlPkg(url);
+    if (pkg)
+      return this.pkgToUrl(pkg);
   
     if (url.startsWith('node:'))
       return url;
@@ -55,6 +56,16 @@ export class Resolver {
     if (cached) return cached;
     if (!this.pcfgPromises[pkgUrl])
       this.pcfgPromises[pkgUrl] = (async () => {
+        for (const cdnUrl of Object.keys(providers)) {
+          if (pkgUrl.startsWith(cdnUrl)) {
+            const pcfg = await providers[cdnUrl].getPackageConfig?.call(this, pkgUrl);
+            if (pcfg !== undefined) {
+              this.pcfgs[pkgUrl] = pcfg;
+              return;
+            }
+            break;
+          }
+        }
         const res = await fetch(`${pkgUrl}package.json`, this.fetchOpts);
         switch (res.status) {
           case 200:
@@ -112,83 +123,14 @@ export class Resolver {
     }
   }
 
-  async resolveLatestTarget (target: PackageTarget, parentUrl?: string | URL): Promise<ExactPackage> {
-    const { registry, name, ranges } = target;
-
-    // exact version optimization
-    if (ranges.length === 1 && ranges[0].isExact && !ranges[0].version.tag)
-      return { registry, name, version: ranges[0].version.toString() };
-
-    const cache = this.resolveCache[target.registry + ':' + target.name] = this.resolveCache[target.registry + ':' + target.name] || {
-      latest: null,
-      majors: Object.create(null),
-      minors: Object.create(null),
-      tags: Object.create(null)
-    };
-    
-    for (const range of ranges.reverse()) {
-      if (range.isWildcard) {
-        let lookup = await (cache.latest || (cache.latest = this.lookupRange(registry, name, '', parentUrl)));
-        // Deno wat?
-        if (lookup instanceof Promise)
-          lookup = await lookup;
-        if (lookup) {
-          if (lookup instanceof Promise)
-            throwInternalError();
-          log('resolve', `${target.registry}:${target.name}@${target.ranges.map(range => range.toString()).join('|')} -> WILDCARD ${lookup.version}${parentUrl ? ' [' + parentUrl + ']' : ''}`);
-          return lookup;
-        }
-      }
-      else if (range.isExact && range.version.tag) {
-        const tag = range.version.tag;
-        let lookup = await (cache.tags[tag] || (cache.tags[tag] = this.lookupRange(registry, name, tag, parentUrl)));
-        // Deno wat?
-        if (lookup instanceof Promise)
-        lookup = await lookup;
-        if (lookup) {
-          if (lookup instanceof Promise)
-            throwInternalError();
-          log('resolve', `${target.registry}:${target.name}@${target.ranges.map(range => range.toString()).join('|')} -> TAG ${tag}${parentUrl ? ' [' + parentUrl + ']' : ''}`);
-          return lookup;
-        }
-      }
-      else if (range.isMajor) {
-        const major = range.version.major;
-        let lookup = await (cache.majors[major] || (cache.majors[major] = this.lookupRange(registry, name, major, parentUrl)));
-        // Deno wat?
-        if (lookup instanceof Promise)
-          lookup = await lookup;
-        if (lookup) {
-          if (lookup instanceof Promise)
-            throwInternalError();
-          log('resolve', `${target.registry}:${target.name}@${target.ranges.map(range => range.toString()).join('|')} -> MAJOR ${lookup.version}${parentUrl ? ' [' + parentUrl + ']' : ''}`);
-          return lookup;
-        }
-      }
-      else if (range.isStable) {
-        const minor = `${range.version.major}.${range.version.minor}`;
-        let lookup = await (cache.minors[minor] || (cache.minors[minor] = this.lookupRange(registry, name, minor, parentUrl)));
-        // Deno wat?
-        if (lookup instanceof Promise)
-          lookup = await lookup;
-        if (lookup) {
-          if (lookup instanceof Promise)
-            throwInternalError();
-          log('resolve', `${target.registry}:${target.name}@${target.ranges.map(range => range.toString()).join('|')} -> MINOR ${lookup.version}${parentUrl ? ' [' + parentUrl + ']' : ''}`);
-          return lookup;
-        }
-      }
-    }
-    throw new JspmError(`Unable to resolve package ${registry}:${name} to "${ranges.join(' || ')}"${importedFrom(parentUrl)}`);
-  }
-  
-  private async lookupRange (registry: string, name: string, range: string, parentUrl?: string | URL): Promise<ExactPackage | null> {
-    const res = await fetch(pkgToLookupUrl({ registry, name, version: range }), this.fetchOpts);
-    switch (res.status) {
-      case 304: case 200: return { registry, name, version: (await res.text()).trim() };
-      case 404: return null;
-      default: throw new JspmError(`Invalid status code ${res.status} looking up "${registry}:${name}" - ${res.statusText}${importedFrom(parentUrl)}`);
-    }
+  async resolveLatestTarget (target: PackageTarget, unstable: boolean, parentUrl?: string): Promise<ExactPackage> {
+    const provider = registryProviders[target.registry];
+    if (!provider)
+      throw new JspmError(`No registry provider configured for ${target.registry}.`);
+    const pkg = await provider.resolveLatestTarget.call(this, target, unstable, parentUrl);
+    if (pkg)
+      return pkg;
+      throw new JspmError(`Unable to resolve package ${target.registry}:${target.name} to "${target.ranges.join(' || ')}"${importedFrom(parentUrl)}`);
   }
 
   async resolveExports (pkgUrl: string, env: string[], subpathFilter?: string): Promise<Record<string, string>> {
@@ -286,7 +228,7 @@ export class Resolver {
     return exports;
   }
 
-  async getIntegrity (url: string, offline: boolean) {
+  async getIntegrity (url: string) {
     const res = await fetch(url, this.fetchOpts);
     switch (res.status) {
       case 200: case 304: break;

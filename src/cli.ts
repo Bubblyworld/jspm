@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-all --no-check --unstable --importmap /home/guybedford/Projects/jspm/jspm.deno.importmap
+#!/usr/bin/env -S deno run --allow-all --no-check --unstable --importmap /home/guybedford/Projects/jspm/jspm.importmap
 import './deps.ts';
 import chalk from 'chalk';
 import { JspmError } from "./common/err.ts";
@@ -160,9 +160,9 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         spinner.text = `Linking for ${opts.env.join(', ')}...`;
         const { link } = await import('./cmd/link.ts');
         let { changed, map } = await link(args, opts as TraceMapOptions);
+        spinner.stop();
         const output = map.toString();
         if (opts.out === undefined) {
-          spinner.stop();
           console.log(output);
           break;
         }
@@ -233,10 +233,11 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         const { uninstall } = await import('./cmd/uninstall.ts');
 
         spinner = await startSpinnerLog(log);
-        spinner.text = 'Removing ' + args.join(', ') + '...';
+        spinner.text = 'Uninstalling ' + args.join(', ') + '...';
         const changed = await uninstall(args);
+        spinner.stop();
         if (changed)
-          ok(`Removed ${args.join(', ')}.`);
+          ok(`Uninstalled ${args.join(', ')}.`);
         else
           ok(`No package.json dependencies found to remove.`);
         break;

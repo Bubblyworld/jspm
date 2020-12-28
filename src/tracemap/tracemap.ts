@@ -3,7 +3,7 @@ import { baseUrl, importedFrom, isPlain } from "../common/url.ts";
 import { Installer } from "../install/installer.ts";
 import { log } from "../common/log.ts";
 import { JspmError, throwInternalError } from "../common/err.ts";
-import { parsePkg, PackageTarget } from "../install/package.ts";
+import { parsePkg } from "../install/package.ts";
 import { getMapMatch, getScopeMatches, IImportMap, ImportMap } from "./map.ts";
 import resolver from "../install/resolver.ts";
 

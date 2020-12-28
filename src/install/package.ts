@@ -78,10 +78,11 @@ export function isPackageTarget (targetStr: string): boolean {
   return true;
 }
 
-export function pkgUrlToNiceString (pkgUrl: string, cdnUrls: string[] = ['https://ga.jspm.io/', 'https://system.ga.jspm.io/']) {
-  for (const url of cdnUrls) {
-    if (pkgUrl.startsWith(url))
-      return decodeURIComponent(pkgUrl.slice(url.length));
+export function pkgUrlToNiceString (pkgUrl: string) {
+  const pkg = resolver.parseUrlPkg(pkgUrl);
+  if (pkg) {
+    const subpath = pkgUrl.slice(resolver.pkgToUrl(pkg).length);
+    return pkgToStr(pkg) + subpath;
   }
   if (pkgUrl.startsWith('file:')) {
     return urlToNiceStr(pkgUrl);
@@ -153,10 +154,6 @@ export function newPackageTarget (target: string, parentPkgUrl: string, depName?
   return { registry, name, ranges };
 }
 
-export function pkgToUrl (pkg: ExactPackage, cdnUrl: string) {
-  return cdnUrl + pkgToStr(pkg) + '/';
-}
-
 export function pkgToStr (pkg: ExactPackage) {
   return `${pkg.registry ? pkg.registry + ':' : ''}${pkg.name}${pkg.version ? '@' + pkg.version : ''}`;
 }
@@ -171,16 +168,6 @@ export function parsePkg (specifier: string): { pkgName: string, subpath: string
   if (sepIndex === -1)
     return { pkgName: specifier, subpath: '.' };
   return { pkgName: specifier.slice(0, sepIndex), subpath: '.' + specifier.slice(sepIndex) };
-}
-
-const exactPkgRegEx = /^(([a-z]+):)?((?:@[^/\\%@]+\/)?[^./\\%@][^/\\%@]*)@([^\/]+)(\/.*)?$/;
-export function parseCdnPkg (url: string, cdnUrls: string | string[]): { pkg: ExactPackage, cdnUrl: string } | undefined {
-  for (const cdnUrl of typeof cdnUrls === 'string' ? [cdnUrls] : cdnUrls) {
-    if (!url.startsWith(cdnUrl))
-      continue;
-    const [,, registry, name, version] = url.slice(cdnUrl.length).match(exactPkgRegEx) || [];
-    return { pkg: { registry, name, version }, cdnUrl };
-  }
 }
 
 // export function getPackageName (specifier: string, parentUrl: string) {
