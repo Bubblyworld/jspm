@@ -4,12 +4,15 @@ import { log } from '../common/log.ts';
 import { builtinModules } from 'module';
 import { fileURLToPath } from 'url';
 import * as lock from "./lock.ts";
-import resolver, { cdnUrls } from "./resolver.ts";
+import resolver from "./resolver.ts";
 import { ExactPackage, newPackageTarget, PackageTarget, pkgToUrl, parseCdnPkg } from "./package.ts";
 import { isURL, importedFrom } from "../common/url.ts";
-import { throwInternalError } from "../common/err.ts";
+import { throwInternalError, JspmError } from "../common/err.ts";
 import { DependenciesField, updatePjson } from './pjson.ts';
 import path from 'path';
+
+// should import from resolver.ts but deno not happy due to esm bugs
+const cdnUrls = ['https://ga.jspm.io/', 'https://system.jspm.io/', 'https://deno.land/x/', 'https://deno.land/'];
 
 export const builtinSet = new Set<string>(builtinModules);
 
@@ -37,12 +40,11 @@ export interface InstallOptions {
   // if a resolution is not in its expected range
   // / expected URL (usually due to manual user edits),
   // force override a new install
-  force?: boolean;
+  reset?: boolean;
   // stdlib target
   stdlib?: string;
 
   cdnUrl?: string;
-
   
   // whether the install is a full dependency install
   // or simply a trace install
@@ -140,8 +142,6 @@ export class Installer {
           await this.lockInstall([...new Set([...deps, ...existingBuiltins])], this.installBaseUrl, true);
         }
 
-        console.log(this.opts);
-        console.log(JSON.stringify(this.installs, null, 2));
         const changed = this.opts.freezeLock === true || this.opts.noLock === true ||
             lock.saveVersionLock(this.installs, this.lockfilePath) || pjsonChanged;
         this.installing = false;
@@ -174,30 +174,36 @@ export class Installer {
     }
   }
 
-  replace (target: InstallTarget, replacePkgUrl: string) {
+  replace (target: InstallTarget, replacePkgUrl: string): boolean {
     let targetUrl: string;
     if (target instanceof URL) {
       targetUrl = target.href;
     }
     else {
       const pkg = this.getBestMatch(target);
-      if (!pkg)
+      if (!pkg) {
+        if (this.installs[replacePkgUrl])
+          return false;
         throw new Error('No installation found to replace.');
+      }
       targetUrl = pkgToUrl(pkg, this.cdnUrl);
     }
 
+    let replaced = false;
     for (const pkgUrl of Object.keys(this.installs)) {
       for (const name of Object.keys(this.installs[pkgUrl])) {
         if (this.installs[pkgUrl][name] === targetUrl) {
-          this.newInstalls = true;
           this.installs[pkgUrl][name] = replacePkgUrl;
+          replaced = true;
         }
       }
       if (pkgUrl === targetUrl) {
         this.installs[replacePkgUrl] = this.installs[pkgUrl];
         delete this.installs[pkgUrl];
+        replaced = true;
       }
     }
+    return replaced;
   }
 
   async installTarget (pkgName: string, target: InstallTarget, pkgScope: string, pjsonPersist: boolean, parentUrl = pkgScope): Promise<string> {
@@ -250,9 +256,11 @@ export class Installer {
   async install (pkgName: string, pkgUrl: string, parentUrl: string = this.installBaseUrl): Promise<string> {
     if (!this.installing)
       throwInternalError();
-    const existingUrl = this.installs[pkgUrl]?.[pkgName];
-    if (existingUrl)
-      return existingUrl;
+    if (!this.opts.reset) {
+      const existingUrl = this.installs[pkgUrl]?.[pkgName];
+      if (existingUrl && !this.opts.reset)
+        return existingUrl;
+    }
 
     const pcfg = await resolver.getPackageConfig(pkgUrl) || {};
 
@@ -286,16 +294,22 @@ export class Installer {
     return [];
   }
 
-  private getBestMatch (pkg: PackageTarget): ExactPackage | null {
+  private getBestMatch (matchPkg: PackageTarget): ExactPackage | null {
     let bestMatch: ExactPackage | null = null;
     for (const pkgUrl of Object.keys(this.installs)) {
       const { pkg } = parseCdnPkg(pkgUrl, cdnUrls) || {};
-      if (pkg) {
-        if (!bestMatch)
+      if (pkg && this.inRange(pkg, matchPkg)) {
+        if (bestMatch)
+          bestMatch = new Semver(bestMatch.version).compare(pkg.version) === -1 ? pkg : bestMatch;
+        else
           bestMatch = pkg;
       }
     }
     return bestMatch;
+  }
+
+  private inRange (pkg: ExactPackage, target: PackageTarget) {
+    return pkg.registry === target.registry && pkg.name === target.name && target.ranges.some(range => range.has(pkg.version, true));
   }
 
   // upgrade any existing packages to this package if possible
@@ -308,7 +322,7 @@ export class Installer {
       for (const { pkg, target } of installed) {
         if (pkg.version !== version) continue;
         // user out-of-version lock
-        if (!this.opts.force && !target.ranges.some(range => range.has(pkg.version, true))) {
+        if (!this.opts.reset && !target.ranges.some(range => range.has(pkg.version, true))) {
           hasVersionUpgrade = false;
           continue;
         }

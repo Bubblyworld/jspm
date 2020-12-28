@@ -2,7 +2,7 @@ import { baseUrl } from '../common/url.ts';
 import { updatePjson } from "../install/pjson.ts";
 import TraceMap from '../tracemap/tracemap.ts';
 
-export async function rem (names: string | string[]): Promise<boolean> {
+export async function uninstall (names: string | string[]): Promise<boolean> {
   if (typeof names === 'string')
     names = [names];
 

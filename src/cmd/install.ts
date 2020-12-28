@@ -6,9 +6,11 @@ import { JspmError } from "../common/err.ts";
 import process from 'process';
 import { pathToFileURL } from 'url';
 
-export async function add (targets: string | string[], opts: TraceMapOptions): Promise<{ changed: boolean, installed: string[] }> {
+export async function install (targets: string | string[], opts: TraceMapOptions): Promise<{ changed: boolean, installed: string[] }> {
   if (typeof targets === 'string')
     targets = [targets];
+  if (targets.length === 0)
+    opts = { ...opts, fullInstall: true };
   const traceMap = new TraceMap(baseUrl, opts);
 
   const finishInstall = await traceMap.startInstall();

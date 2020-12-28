@@ -4,9 +4,6 @@ import sver from 'sver';
 import convertRange from 'sver/convert-range';
 import { InstallTarget } from "./installer.ts";
 import resolver from "./resolver.ts";
-import path from 'path';
-import process from 'process';
-import { fileURLToPath } from 'url';
 import { urlToNiceStr } from "../common/url.ts";
 
 const { SemverRange } = sver;

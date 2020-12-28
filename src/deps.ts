@@ -21,3 +21,9 @@ declare module 'sver/convert-range' {
   import { SemverRange } from 'https://ga.jspm.io/npm:sver@1.8.3/sver.js';
   export default function convertRange (range: string): typeof SemverRange;
 }
+
+declare module 'crypto' {
+  export const createHash: any;
+}
+
+declare module 'mkdirp';

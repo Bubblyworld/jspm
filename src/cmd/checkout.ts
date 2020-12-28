@@ -7,7 +7,7 @@ import { JspmError } from '../common/err.ts';
 import resolver from '../install/resolver.ts';
 import { fileURLToPath } from 'url';
 
-export async function checkout (targetStr: string, depsDir: string = 'deps', beautify = false): Promise<string> {
+export async function checkout (targetStr: string, depsDir: string = 'deps', beautify = false): Promise<string | null> {
   const traceMap = new TraceMap(baseUrl, { install: true, save: true });
 
   const finishInstall = await traceMap.startInstall();
@@ -20,10 +20,16 @@ export async function checkout (targetStr: string, depsDir: string = 'deps', bea
     const checkoutUrl = new URL(depsDir + '/' + alias + '/', baseUrl);
 
     await resolver.dlPackage(pkgUrl, fileURLToPath(checkoutUrl));
-    traceMap.replace(target, checkoutUrl.href);
+    const replaced = traceMap.replace(target, checkoutUrl.href);
 
-    await finishInstall(true);
-    return checkoutUrl.href;
+    if (!replaced)
+      return null;
+
+    const didCheckOut = await finishInstall(true);
+    if (didCheckOut)
+      return checkoutUrl.href;
+
+    return null;
   }
   catch (e) {
     finishInstall(false);

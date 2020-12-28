@@ -3,7 +3,7 @@
 url = "."
 
 [package.deps]
-"@iarna/toml" = "./deps/@iarna/toml"
+"@iarna/toml" = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
 buffer = "./core/dist|nodelibs/buffer"
 cache = "./deps/cache"
 chalk = "https://ga.jspm.io/npm:chalk@4.1.0"
@@ -22,7 +22,7 @@ sver = "https://ga.jspm.io/npm:sver@1.8.3"
 url = "./core/dist|nodelibs/url"
 
 [[package]]
-url = "./deps/@iarna/toml"
+url = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
 
 [package.deps]
 process = "./core/dist|nodelibs/process"

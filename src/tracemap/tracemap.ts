@@ -64,8 +64,8 @@ export default class TraceMap {
       this.map = new ImportMap(mapBase);
   }
 
-  replace (target: InstallTarget, pkgUrl: string) {
-    this.installer!.replace(target, pkgUrl);
+  replace (target: InstallTarget, pkgUrl: string): boolean {
+    return this.installer!.replace(target, pkgUrl);
   }
 
   async visit (url: string, visitor: (url: string, entry: TraceEntry) => Promise<boolean | void>, seen = new Set()) {
