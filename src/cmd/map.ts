@@ -3,11 +3,12 @@ import { baseUrl } from '../common/url.ts';
 import { ImportMap } from "../tracemap/map.ts";
 import { isPackageTarget, toPackageTarget } from "../install/package.ts";
 import { pathToFileURL } from 'url';
+import chalk from 'chalk';
 import process from 'process';
 
-export async function link (modules: string | string[], opts: TraceMapOptions): Promise<{
+export async function map (modules: string | string[], opts: TraceMapOptions): Promise<{
   changed: boolean,
-  map: ImportMap
+  importMap: ImportMap
 }> {
   if (typeof modules === 'string')
     modules = [modules];
@@ -41,9 +42,12 @@ export async function link (modules: string | string[], opts: TraceMapOptions): 
     map.flatten();
     map.rebase();
     map.sort();
-    return { changed, map };
+    return { changed, importMap: map };
   }
   catch (e) {
+    if (e.code === 'ERR_NOT_INSTALLED') {
+      e.message += `\nUse the ${chalk.bold('-autoinstall')} / ${chalk.bold('-a')} flag to automatically install dependencies during linking.`;
+    }
     finishInstall(false);
     throw e;
   }

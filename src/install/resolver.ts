@@ -11,6 +11,8 @@ import mkdirp from 'mkdirp';
 import { Buffer } from 'buffer';
 import path from 'path';
 import { providers, registryProviders } from '../providers/index.ts';
+import process from 'process';
+import { pathToFileURL } from 'url';
 
 export class Resolver {
   pcfgPromises: Record<string, Promise<void>> = Object.create(null);
@@ -44,8 +46,13 @@ export class Resolver {
       let responseUrl;
       if (responseUrl = await resolver.checkPjson(testUrl.href))
         return new URL('.', responseUrl).href;
-      if (testUrl.pathname === '/')
+      // if hitting the base and we are in the cwd, use the cwd
+      if (testUrl.pathname === '/') {
+        const cwd = pathToFileURL(process.cwd()) + '/';
+        if (url.startsWith(cwd))
+          return cwd;
         return testUrl.href;
+      }
     } while (testUrl = new URL('../', testUrl));
   }
 

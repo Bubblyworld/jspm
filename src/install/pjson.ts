@@ -24,7 +24,13 @@ export interface PackageJson {
 
 export async function updatePjson (pjsonBase: string, updateFn: (pjson: PackageJson) => void | PackageJson | Promise<void | PackageJson>): Promise<boolean> {
   const pjsonUrl = new URL('package.json', pjsonBase);
-  const input = readFileSync(pjsonUrl).toString();
+  let input;
+  try {
+    input = readFileSync(pjsonUrl).toString();
+  }
+  catch (e) {
+    input = '{}\n';
+  }
   let { json: pjson, style } = json.parseStyled(input);
   pjson = await updateFn(pjson) || pjson;
   const output = json.stringifyStyled(pjson, style);

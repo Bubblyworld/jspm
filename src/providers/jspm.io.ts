@@ -6,6 +6,7 @@ import { PackageTarget } from "../install/package.ts";
 import { pkgToStr } from "../install/package.ts";
 import { ExactPackage } from "../install/package.ts";
 import { Resolver } from "../install/resolver.ts";
+import { fetch } from '../common/fetch.ts';
 
 export const cdnUrl = 'https://ga.jspm.io/';
 

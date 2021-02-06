@@ -1,4 +1,3 @@
-#!/usr/bin/env -S deno run --allow-all --no-check --unstable --importmap /home/guybedford/Projects/jspm/jspm.importmap
 import './deps.ts';
 import chalk from 'chalk';
 import { JspmError } from "./common/err.ts";
@@ -141,13 +140,16 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         throw new JspmError('jspm init is a TODO');
       }
 
-      case 'link': {
+      case 'map': {
         const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['log', 'browser', 'production', 'node', 'freeze-lock', 'no-lock'],
+          boolFlags: ['log', 'browser', 'production', 'node', 'lockless', 'autoinstall'],
           strFlags: ['log', 'out'],
           arrFlags: ['env'],
-          aliases: { 'o': 'out', 'b': 'browser', 'p': 'production', 'x': 'freeze-lock' }
+          aliases: { 'o': 'out', 'b': 'browser', 'p': 'production', 'a': 'autoinstall' }
         });
+
+        if (!opts.autoinstall && !opts.lockless)
+          opts.noInstall = true;
 
         opts.env = [...opts.env as string[] || [], ...opts.browser ? ['browser'] : opts.node ? ['node'] : ['deno', 'node']];
 
@@ -158,10 +160,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
         spinner = await startSpinnerLog(log);
         spinner.text = `Linking for ${opts.env.join(', ')}...`;
-        const { link } = await import('./cmd/link.ts');
-        let { changed, map } = await link(args, opts as TraceMapOptions);
+        const { map } = await import('./cmd/map.ts');
+        let { changed, importMap } = await map(args, opts as TraceMapOptions);
         spinner.stop();
-        const output = map.toString();
+        const output = importMap.toString();
         if (opts.out === undefined) {
           console.log(output);
           break;
@@ -259,8 +261,27 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         console.log(`jspm/${version}`);
         break;
 
+      case 'info':
       default:
-        console.error((cmd ? ' ' + chalk.red(`Unknown command ${cmd}\n`) : '') + usage());
+        const isInfo = !cmd || cmd === 'info';
+        if (isInfo) {
+          const { info } = await import('./cmd/info.ts');
+          const { projectPath, packageJSON, lockFile } = await info();
+          if (packageJSON && lockFile) {
+            console.log('Project Path: ' + projectPath);
+            ok(`${chalk.bold('package.json')} and ${chalk.bold('jspm.lock')} both found.`);
+          }
+          else if (packageJSON) {
+            console.log('Project Path: ' + projectPath);
+            console.log(`${chalk.bold.green('warn  ')} jspm.lock does not exist.`);
+          }
+          else {
+            console.log(`${chalk.bold.grey('info  ')} No jspm project found, a new ${chalk.bold('package.json')} file will be created when installing any dependencies.`);
+          }
+        }
+        else {
+          console.error(' ' + chalk.red(`Unknown command ${cmd}\n`) + usage());
+        }
     }
   }
   catch (e) {
@@ -296,7 +317,7 @@ function cmdList (cmds: string[], doubleSpace = false) {
   return '\n    ' + list.join('\n    ');
 }
 
-const highlightCommands = ['install', 'link', 'deno', 'help'];
+const highlightCommands = ['install', 'map', 'deno', 'help'];
 
 function usage () {
   const header = `
@@ -434,10 +455,10 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
 
   All Deno run options should be supported. See "deno help run".
 
-  Internally, the module is first linked via "jspm link <module>" in order to
+  Internally, the module is first linked via "jspm map <module>" in order to
   automaticaly construct a temporary import map to provide to Deno run.
 
-  See "jspm help link" for more information on jspm just-in-time linking.
+  See "jspm help map" for more information on jspm just-in-time linking.
 
   ${chalk.bold('Example:')}
     
@@ -463,10 +484,10 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
   ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
   ],
 
-  'link': [
-    'jspm link [module]+',
+  'map': [
+    'jspm map [module]+',
     'Link a module for execution', `
-    jspm link [module]+
+    jspm map [module]+
 
   Traces the given modules and links them using the lockfile dependency
   resolutions, outputting the corresponding import map for the subgraph.
@@ -475,9 +496,9 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
   any new resolutions to the lockfile, unless specified otherwise via the
   --freeze-lock or --no-lock flags.
 
-  The default link environment is "browser", "development".
+  The default linkage environment is "browser", "development".
 
-  To fully link for all possibly dependency imports, use "jspm link"
+  To fully link for all possibly dependency imports, use "jspm map"
   without any module arguments.
 
   Options:
@@ -588,9 +609,3 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
     'Print the current jspm version'
   ],
 };
-
-if (import.meta.main) {
-  const [cmd, ...rawArgs] = Deno.args;
-  const code = await cli(cmd, rawArgs);
-  Deno.exit(code);
-}
