@@ -75,7 +75,7 @@ _fetch = async function (url: URL, ...args: any[]) {
     }
   }
   if (typeof Deno !== 'undefined' /*&& args[0]?.cache === 'only-if-cached' */) {
-    const { cache } = await import(eval('cache'));
+    const { cache } = await import(eval('"../../deps/cache/mod.ts"'));
     try {
       const file = await cache(urlString);
       return {

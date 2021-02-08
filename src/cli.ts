@@ -41,7 +41,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       case 'install': {
         const { args, opts } = readFlags(rawArgs, {
           boolFlags: ['log', 'dev', 'peer', 'optional', 'reset'],
-          strFlags: ['log']
+          strFlags: ['log', 'stdlib']
         });
         spinner = await startSpinnerLog(log);
         spinner.text = `Installing${args.length ? ' ' + args.join(', ').slice(0, process.stdout.columns - 21) : ''}...`;
@@ -123,7 +123,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
             denoFlags.push('--' + asSnakeCase + '=' + opts[flag]);
         }
         const { deno } = await import('./cmd/deno.ts');
-        const code = await deno(rawArgs[execArgIndex], denoFlags, args, opts);
+        const code = await deno(rawArgs[execArgIndex], denoFlags, rawArgs.slice(execArgIndex + 1), opts);
         return code;
       }
 
@@ -499,21 +499,18 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
   resolutions, outputting the corresponding import map for the subgraph.
 
   Linking will use the local lockfile by default, including persisting
-  any new resolutions to the lockfile, unless specified otherwise via the
-  --freeze-lock or --no-lock flags.
+  any new resolutions to the lockfile only if it exists, unless specified
+  otherwise via the --freeze or --lock flags.
 
   The default linkage environment is "browser", "development".
-
-  To fully link for all possibly dependency imports, use "jspm map"
-  without any module arguments.
 
   Options:
     -d, --deno                Resolve modules for the "deno" environment.
     -p, --production          Resolve modules the "production" environment
                               (defaults to "development").
         --node                Resolve modules for the "node" environment.
-    -x  --freeze-lock         Do not make any changes to the lockfile.
-        --no-lock             Ignore lockfile resolutions entirely.
+    -x  --freeze              Do not make any changes to the lockfile.
+        --lock                Create a lockfile if it does not already exist.
         [--env=custom]+       Resolve modules for custom environment names.
 
   For more information on how module resolution works and the way conditional

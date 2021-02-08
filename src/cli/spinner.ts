@@ -23,7 +23,7 @@ export async function startSpinnerLog (log: boolean | string) {
   if (!log) {
     let ora;
     if (typeof Deno !== 'undefined') {
-      ({ wait: ora } = await import(eval('https://deno.land/x/wait/mod.ts')));
+      ({ wait: ora } = await import(eval('"https://deno.land/x/wait/mod.ts"')));
     }
     else {
       ({ default: ora  } = await import(true ? 'ora' : ''));
