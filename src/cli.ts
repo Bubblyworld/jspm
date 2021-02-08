@@ -150,6 +150,9 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           aliases: { 'o': 'out', 'p': 'production', 'l': 'lock', 's': 'system', 'x': 'freeze' }
         });
 
+        if (!args.length)
+          throw new JspmError(`jspm map requires a module or list of modules to map.`);
+
         opts.env = [...opts.env as string[] || [], ...opts.deno ? ['deno', 'node'] : opts.node ? ['node'] : ['browser']];
 
         if (opts.production)

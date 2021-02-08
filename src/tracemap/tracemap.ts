@@ -10,18 +10,14 @@ import resolver from "../install/resolver.ts";
 export interface TraceMapOptions extends InstallOptions {
   env?: string[];
 
+  // input map (deprecate?)
   inMap?: IImportMap;
-  // whether to generate an import map of the install trace
-  importMap?: boolean;
-  // whether to generate depcache on the import map of the install trace
-  depcache?: boolean;
-  // whether to support system tracing (in MapOptions this does system post-conversion too)
-  system?: boolean;
   // do not trace dynamic imports
   static?: boolean;
 
   // whether the import map is a full generic import map for the app
   // or an exact trace for the provided entry points
+  // (currently unused)
   fullMap?: boolean;
 }
 
