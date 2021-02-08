@@ -1,8 +1,6 @@
 import { createHash } from 'crypto';
 import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.ts';
 import { baseUrl } from '../common/url.ts';
-import os from 'os';
-import { computeIntegrity } from "../common/integrity.ts";
 import { readFileSync, writeFileSync } from 'fs';
 import { runCmd } from '../common/cmd.ts';
 import { isPackageTarget, toPackageTarget } from "../install/package.ts";
@@ -33,21 +31,19 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
   const tmpDir = '/tmp'; // os.tmpdir();
   let mapFile: string | undefined;
 
-  if (!opts.install) {
-    const { mapPrefix, mapSuffix } = computeMapHash(process.cwd(), targetStr);
-    if (mapSuffix) {
-      try {
-        const existingMap = readFileSync(tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap').toString();
-        // JSON.parse(existingMap);
-        mapFile = tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap';
-      }
-      catch {}
-      if (mapFile)
-        return await runCmd(`deno run --unstable --importmap ${mapFile} ${flags.join(' ')} ${targetStr} ${args.join(' ')}`);
-    }
-  }
-
-  opts.save = !opts.freezeLock && !opts.noLock;
+  // if (!opts.install) {
+  //   const { mapPrefix, mapSuffix } = computeMapHash(process.cwd(), targetStr);
+  //   if (mapSuffix) {
+  //     try {
+  //       const existingMap = readFileSync(tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap').toString();
+  //       // JSON.parse(existingMap);
+  //       mapFile = tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap';
+  //     }
+  //     catch {}
+  //     if (mapFile)
+  //       return await runCmd(`deno run --unstable --importmap ${mapFile} ${flags.join(' ')} ${targetStr} ${args.join(' ')}`);
+  //   }
+  // }
 
   const traceMap = new TraceMap(baseUrl, opts);
   const finishInstall = await traceMap.startInstall();

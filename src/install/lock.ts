@@ -5,6 +5,7 @@ import { pathToFileURL } from 'url';
 import { relativeUrl } from "../common/url.ts";
 
 export interface Lockfile {
+  exists: boolean;
   resolutions: LockResolutions;
 }
 
@@ -37,6 +38,7 @@ export function pruneResolutions (resolutions: LockResolutions, to: [string, str
 }
 
 export function loadVersionLock (lockFile: string): Lockfile {
+  let exists = false;
   const resolutions: LockResolutions = {};
 
   const lockUrl = pathToFileURL(lockFile);
@@ -46,7 +48,7 @@ export function loadVersionLock (lockFile: string): Lockfile {
       return new URL(url + (url[url.length - 1] === '/' || url.indexOf('|') !== -1 ? '' : '/'), lockUrl).href;
     }
     catch {
-      throw new JspmError(`Invalid package URL ${url} ${name ? `for ${name} ` : ''}in lockfile ${lockFile}`, 'INVALID_LOCKFILE');
+      throw new JspmError(`Invalid package URL ${url} ${name ? `for ${name} ` : ''}in lockfile ${lockFile}`, 'ERR_INVALID_LOCKFILE');
     }
   }
 
@@ -66,13 +68,14 @@ export function loadVersionLock (lockFile: string): Lockfile {
   let source;
   try {
     source = readFileSync(lockFile);
+    exists = true;
   }
   catch {}
 
   const { package: packages } = toml.parse(source ? source.toString() : '');
 
   if (!Array.isArray(packages))
-    return { resolutions };
+    return { resolutions, exists };
 
   for (const { url, deps } of packages) {
     const scopeURL = parseResolutionURL(url);
@@ -82,7 +85,7 @@ export function loadVersionLock (lockFile: string): Lockfile {
       resolutions[scopeURL] = Object.create(null);
   }
 
-  return { resolutions };
+  return { resolutions, exists };
 }
 
 export function saveVersionLock (resolutions: LockResolutions, lockFile: string) {

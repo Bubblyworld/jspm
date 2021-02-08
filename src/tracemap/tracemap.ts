@@ -20,9 +20,6 @@ export interface TraceMapOptions extends InstallOptions {
   // do not trace dynamic imports
   static?: boolean;
 
-  // whether to permit new install into the lockfile
-  install?: boolean;
-
   // whether the import map is a full generic import map for the app
   // or an exact trace for the provided entry points
   fullMap?: boolean;
@@ -51,7 +48,7 @@ export default class TraceMap {
   map: ImportMap;
   mapBase: URL;
   pjsonBase: URL | undefined;
-  entryTraces = new Set<string>();
+  traces = new Set<string>();
 
   constructor (mapBase: URL, opts: TraceMapOptions = {}) {
     this.mapBase = mapBase;
@@ -99,13 +96,13 @@ export default class TraceMap {
 
       // re-drive all the traces to convergence
       if (!this.opts.fullMap) {
-        const modules: Record<string, string> = {};
+        const traceResolutions: Record<string, string> = {};
         do {
           this.installer!.newInstalls = false;
-          await Promise.all([...this.entryTraces].map(async trace => {
+          await Promise.all([...this.traces].map(async trace => {
             const [specifier, parentUrl] = trace.split('##');
             const resolved = await this.trace(specifier, new URL(parentUrl));
-            modules[resolved] = specifier;
+            traceResolutions[trace] = resolved;
           }));
         } while (this.installer!.newInstalls);
 
@@ -124,14 +121,16 @@ export default class TraceMap {
               this.map.addMapping(dep, entry.deps[dep], parentPkgUrl);
           }
         }
+        const seen = new Set<string>();
 
-        for (const [url, specifier] of Object.entries(modules)) {
-          if (isPlain(specifier))
-            this.map.addMapping(specifier, url, this.mapBase.href);
-          await this.visit(url, depVisitor);
+        for (const trace of this.traces) {
+          const url = traceResolutions[trace];
+          const [specifier, parentUrl] = trace.split('##');
+          if (isPlain(specifier) && parentUrl === this.mapBase.href)
+            this.map.addMapping(specifier, url);
+          await this.visit(url, depVisitor, seen);
         }
 
-        const seen = new Set<string>();
         for (const url of discoveredDynamics) {
           await this.visit(url, depVisitor, seen);
         }
@@ -165,7 +164,7 @@ export default class TraceMap {
     if (!parentPkgUrl)
       throwInternalError();
 
-    this.entryTraces.add(specifier + '##' + parentUrl.href);
+    this.traces.add(specifier + '##' + parentUrl.href);
 
     if (!isPlain(specifier)) {
       const resolvedUrl = new URL(specifier, parentUrl);
@@ -208,7 +207,7 @@ export default class TraceMap {
       }
     }
 
-    const installed = !this.opts.install ? this.installer?.installs[parentPkgUrl]?.[pkgName] : await this.installer?.install(pkgName, parentPkgUrl, parentUrl.href);
+    const installed = this.opts.freeze ? this.installer?.installs[parentPkgUrl]?.[pkgName] : await this.installer?.install(pkgName, parentPkgUrl, parentUrl.href);
     if (installed) {
       let [pkgUrl, subpathFilter] = installed.split('|');
       if (subpathFilter)

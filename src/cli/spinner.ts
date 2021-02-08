@@ -26,7 +26,7 @@ export async function startSpinnerLog (log: boolean | string) {
       ({ wait: ora } = await import(eval('https://deno.land/x/wait/mod.ts')));
     }
     else {
-      ({ default: ora  } = await import('ora'));
+      ({ default: ora  } = await import(true ? 'ora' : ''));
     }
     spinner = ora({
       color: 'yellow',

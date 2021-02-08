@@ -27,12 +27,12 @@ export interface PackageInstallRange {
 export type InstallTarget = PackageTarget | URL;
 
 export interface InstallOptions {
-  // do not use the lockfile at all
-  lockless?: boolean;
+  // create a lockfile if it does not exist
+  lock?: boolean;
+  // do not modify the lockfile
+  freeze?: boolean;
   // force use latest versions for everything we touch
   latest?: boolean;
-  // do not modify the lockfile, fail on uninstalled
-  noInstall?: boolean;
 
   // if a resolution is not in its expected range
   // / expected URL (usually due to manual user edits),
@@ -62,12 +62,15 @@ export class Installer {
   installBaseUrl: string;
   lockfilePath: string;
   added = new Map<string, InstallTarget>();
+  hasLock = false;
 
   constructor (baseUrl: URL, opts: InstallOptions) {
     this.installBaseUrl = baseUrl.href;
     this.opts = opts;
     this.lockfilePath = fileURLToPath(this.installBaseUrl + 'jspm.lock');
-    const { resolutions } = this.opts.lockless === true ? { resolutions: {} } : lock.loadVersionLock(this.lockfilePath);
+    const { resolutions, exists: hasLock } = lock.loadVersionLock(this.lockfilePath);
+    this.hasLock = hasLock;
+
     this.installs = resolutions;
 
     if (opts.stdlib) {
@@ -97,10 +100,12 @@ export class Installer {
           return false;
         }
 
+        const save = this.hasLock || this.opts.lock;
+
         // update the package.json dependencies
         let pjsonChanged = false;
         let saveField: DependenciesField | null = this.opts.save ? 'dependencies' : this.opts.saveDev ? 'devDependencies' : this.opts.savePeer ? 'peerDependencies' : this.opts.saveOptional ? 'optionalDependencies' : null;
-        if (saveField) {
+        if (saveField && save) {
           pjsonChanged = await updatePjson(this.installBaseUrl, async pjson => {
             pjson[saveField!] = pjson[saveField!] || {};
             for (const [name, target] of this.added) {
@@ -134,8 +139,7 @@ export class Installer {
           await this.lockInstall([...new Set([...deps, ...existingBuiltins])], this.installBaseUrl, true);
         }
 
-        const changed = this.opts.noInstall === true || this.opts.lockless === true ||
-            lock.saveVersionLock(this.installs, this.lockfilePath) || pjsonChanged;
+        const changed = !save ? false : lock.saveVersionLock(this.installs, this.lockfilePath) || pjsonChanged;
         this.installing = false;
         resolve();
         return changed;
@@ -199,8 +203,9 @@ export class Installer {
   }
 
   async installTarget (pkgName: string, target: InstallTarget, pkgScope: string, pjsonPersist: boolean, parentUrl = pkgScope): Promise<string> {
-    if (this.opts.noInstall)
+    if (this.opts.freeze)
       throw new JspmError(`"${pkgName}" is not installed in the jspm lockfile, imported from ${parentUrl}.`, 'ERR_NOT_INSTALLED');
+
     this.newInstalls = true;
 
     if (pjsonPersist) {
@@ -219,7 +224,7 @@ export class Installer {
       return pkgUrl;
     }
 
-    if (this.opts.noInstall) {
+    if (this.opts.freeze) {
       const existingInstall = this.getBestMatch(target);
       if (existingInstall) {
         log('install', `${pkgName} ${pkgScope} -> ${existingInstall.registry}:${existingInstall.name}@${existingInstall.version}`);
@@ -308,7 +313,7 @@ export class Installer {
 
   // upgrade any existing packages to this package if possible
   private tryUpgradePackagesTo (pkg: ExactPackage, installed: PackageInstallRange[]): ExactPackage | undefined {
-    if (this.opts.noInstall) return;
+    if (this.opts.freeze) return;
     const pkgVersion = new Semver(pkg.version);
     let hasUpgrade = false;
     for (const version of new Set(installed.map(({ pkg }) => pkg.version))) {

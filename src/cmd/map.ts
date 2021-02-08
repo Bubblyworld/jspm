@@ -13,7 +13,7 @@ export async function map (modules: string | string[], opts: TraceMapOptions): P
   if (typeof modules === 'string')
     modules = [modules];
 
-  opts = { ...opts, install: true, save: !opts.noLock && !opts.freezeLock };
+  opts = { ...opts, save: opts.lock && !opts.freeze };
 
   const traceMap = new TraceMap(baseUrl, opts);
 

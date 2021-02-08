@@ -93,15 +93,16 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         if (execArgIndex === -1)
           throw new JspmError(`Expected a module to execute.`);
 
-        const jspmFlags = ['freeze-lock', 'no-lock', 'production', 'install'];
+        const jspmBoolFlags = ['freeze', 'lock', 'production'];
+        const jspmStrFlags = ['stdlib'];
 
         // Deno flags inlined because we merge in jspm flag handling here
         const { opts, args } = readFlags(rawArgs.slice(0, execArgIndex), {
           boolFlags: ['log', 'allow-all', 'allow-env', 'allow-hrtime', 'allow-net', 'allow-plugin',
-              'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'no-check', ...jspmFlags],
+              'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'no-check', ...jspmBoolFlags],
           strFlags: ['log', 'allow-net', 'allow-read', 'allow-write', 'inspect', 'inspect-brk',
-              'log-level', 'reload', 'seed', 'v8-flags'],
-          aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload', 'x': 'freeze-lock', 'i': 'install' }
+              'log-level', 'reload', 'seed', 'v8-flags', ...jspmStrFlags],
+          aliases: { 'A': 'allow-all', 'c': 'config', 'L': 'log-level', 'q': 'quiet', 'r': 'reload', 'x': 'freeze', 'l': 'lock' }
         });
 
         opts.env = ['deno', 'node'];
@@ -113,7 +114,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         const denoFlags: string[] = [];
         for (const flag of Object.keys(opts)) {
           const asSnakeCase = fromCamelCase(flag);
-          if (jspmFlags.includes(asSnakeCase))
+          if (jspmBoolFlags.includes(asSnakeCase) || jspmStrFlags.includes(asSnakeCase))
             continue;
           if (typeof opts[flag] === 'boolean')
             denoFlags.push('--' + asSnakeCase);
@@ -142,16 +143,13 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
       case 'map': {
         const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['log', 'browser', 'production', 'node', 'lockless', 'autoinstall'],
-          strFlags: ['log', 'out'],
+          boolFlags: ['log', 'deno', 'production', 'node', 'lock', 'freeze'],
+          strFlags: ['log', 'out', 'stdlib'],
           arrFlags: ['env'],
-          aliases: { 'o': 'out', 'b': 'browser', 'p': 'production', 'a': 'autoinstall' }
+          aliases: { 'o': 'out', 'p': 'production', 'l': 'lock' }
         });
 
-        if (!opts.autoinstall && !opts.lockless)
-          opts.noInstall = true;
-
-        opts.env = [...opts.env as string[] || [], ...opts.browser ? ['browser'] : opts.node ? ['node'] : ['deno', 'node']];
+        opts.env = [...opts.env as string[] || [], ...opts.deno ? ['deno', 'node'] : opts.node ? ['node'] : ['browser']];
 
         if (opts.production)
           opts.env.push('production');
@@ -159,7 +157,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           opts.env.push('development');
 
         spinner = await startSpinnerLog(log);
-        spinner.text = `Linking for ${opts.env.join(', ')}...`;
+        spinner.text = `Mapping for ${opts.env.join(', ')}...`;
         const { map } = await import('./cmd/map.ts');
         let { changed, importMap } = await map(args, opts as TraceMapOptions);
         spinner.stop();
@@ -246,7 +244,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       }
 
       case 'run': {
-        throw new JspmError('jspm run is a TODO');
+        const { args } = readFlags(rawArgs);
+        const { run } = await import('./cmd/run.ts');
+        await run(args[0], args.slice(1));
+        break;
       }
 
       case 'update': {
@@ -267,13 +268,14 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         if (isInfo) {
           const { info } = await import('./cmd/info.ts');
           const { projectPath, packageJSON, lockFile } = await info();
-          if (packageJSON && lockFile) {
-            console.log('Project Path: ' + projectPath);
-            ok(`${chalk.bold('package.json')} and ${chalk.bold('jspm.lock')} both found.`);
-          }
-          else if (packageJSON) {
-            console.log('Project Path: ' + projectPath);
-            console.log(`${chalk.bold.green('warn  ')} jspm.lock does not exist.`);
+          if (packageJSON) {
+            console.log(`Project base path at ${projectPath}`);
+            if (lockFile) {
+              ok(`Found ${chalk.bold('package.json')} and ${chalk.bold('jspm.lock')}.`);
+            }
+            else {
+              console.log(`${chalk.bold.yellow('warn  ')} Run ${chalk.bold('jspm install')} or ${chalk.bold('jspm map --lock')} to start using a dedicated lockfile for installs.`);
+            }
           }
           else {
             console.log(`${chalk.bold.grey('info  ')} No jspm project found, a new ${chalk.bold('package.json')} file will be created when installing any dependencies.`);
@@ -569,9 +571,7 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
   'run': [
     'jspm run <script>',
     'Run a package.json script', `
-    jspm run <script>
-
-  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}`
+    jspm run <script>`
   ],
 
   'update': [

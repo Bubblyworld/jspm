@@ -15,15 +15,29 @@
  */
 import process from 'process';
 import { isWindows, PATH, PATHS_SEP } from '../common/env.ts';
+import { pathToFileURL, fileURLToPath } from 'url';
+import { readFile } from 'fs/promises';
+import resolver from '../install/resolver.ts';
+import { JspmError } from '../common/err.ts';
+import path from 'path';
 
-export async function runCmd (script: string, projectPath: string, cwd?: string): Promise<number>
-export async function runCmd (script: string, projectPath: string, cwd: string, pipe: true): Promise<childProcess.ChildProcess>
-export async function runCmd (script: string, projectPath = process.env.PWD || process.cwd(), cwd = projectPath, pipe = false): Promise<childProcess.ChildProcess | number> {
+export async function run (script: string, args: string[]) {
+  const pjsonPath = await resolver.getPackageBase(pathToFileURL(process.env.PWD || process.cwd()).href);
+  if (!pjsonPath)
+    throw new JspmError(`Unable to find a package.json file.`);
+  const pjson = JSON.parse(await readFile(new URL('package.json', pjsonPath)));
+  const cmd = pjson.scripts[script];
+  return await runCmd(cmd + ['', ...args].join(' '), fileURLToPath(pjsonPath));
+}
+
+async function runCmd (script: string, projectPath: string, cwd?: string): Promise<number>
+async function runCmd (script: string, projectPath: string, cwd: string, pipe: true): Promise<any>
+async function runCmd (script: string, projectPath = process.env.PWD || process.cwd(), cwd = projectPath, pipe = false): Promise<any | number> {
   const env = Object.create(null);
   
   const pathArr = [];
   // pathArr.push(path.join(cwd, 'node-gyp-bin'));
-  // pathArr.push(path.join(projectPath, 'node_modules', '.bin'));
+  pathArr.push(path.join(projectPath, 'node_modules', '.bin'));
   pathArr.push(process.env[PATH]);
 
   Object.assign(env, process.env);
