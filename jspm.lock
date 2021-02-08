@@ -4,6 +4,7 @@ url = "."
 
 [package.deps]
 "@iarna/toml" = "https://ga.jspm.io/npm:@iarna/toml@3.0.0"
+"@vercel/ncc" = "https://ga.jspm.io/npm:@vercel/ncc@0.27.0"
 buffer = "./core/dist|nodelibs/buffer"
 cache = "./deps/cache"
 chalk = "https://ga.jspm.io/npm:chalk@4.1.0"
@@ -19,6 +20,7 @@ path = "./core/dist|nodelibs/path"
 process = "./core/dist|nodelibs/process"
 rimraf = "https://ga.jspm.io/npm:rimraf@3.0.2"
 sver = "https://ga.jspm.io/npm:sver@1.8.3"
+typescript = "https://ga.jspm.io/npm:typescript@4.0.3"
 url = "./core/dist|nodelibs/url"
 
 [[package]]

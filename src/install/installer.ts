@@ -41,9 +41,8 @@ export interface InstallOptions {
   // stdlib target
   stdlib?: string;
   
-  // whether the install is a full dependency install
-  // or simply a trace install
-  fullInstall?: boolean;
+  // whether to prune the dependency installs
+  prune?: boolean;
 
   // save flags
   save?: boolean;
@@ -104,7 +103,7 @@ export class Installer {
 
         // update the package.json dependencies
         let pjsonChanged = false;
-        let saveField: DependenciesField | null = this.opts.save ? 'dependencies' : this.opts.saveDev ? 'devDependencies' : this.opts.savePeer ? 'peerDependencies' : this.opts.saveOptional ? 'optionalDependencies' : null;
+        const saveField: DependenciesField = this.opts.saveDev ? 'devDependencies' : this.opts.savePeer ? 'peerDependencies' : this.opts.saveOptional ? 'optionalDependencies' : 'dependencies';
         if (saveField && save) {
           pjsonChanged = await updatePjson(this.installBaseUrl, async pjson => {
             pjson[saveField!] = pjson[saveField!] || {};
@@ -132,7 +131,7 @@ export class Installer {
 
         // prune the lockfile to the include traces only
         // this is done after pjson updates to include any adds
-        if (this.opts.fullInstall || pjsonChanged) {
+        if (this.opts.prune || pjsonChanged) {
           const deps = await resolver.getDepList(this.installBaseUrl, true);
           // existing deps is any existing builtin resolutions
           const existingBuiltins = new Set(Object.keys(this.installs[this.installBaseUrl] || {}).filter(name => builtinSet.has(name)));

@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npm run build-node && npm run build-api",
     "build-node": "ncc build -t src/node.js -e sver -s -e es-module-lexer",
-    "watch-build-node": "ncc build -t src/node.js -s -e sver -e es-module-lexer -w"
+    "watch-build-node": "ncc build -t src/node.js -s -e sver -e es-module-lexer -w",
+    "test": "deno run --allow-net --no-check src/inject/script-lexer.ts"
   },
   "exports": {
     "publish": "./dist/index.js",
@@ -15,7 +16,7 @@
   "bin": {
     "jspm": "dist/index.js"
   },
-  "main": "./lib/tracemap.js",
+  "main": "./lib/node.js",
   "dependencies": {
     "@iarna/toml": "^3.0.0",
     "es-module-lexer": "^0.3.26",

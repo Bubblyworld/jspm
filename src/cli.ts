@@ -68,6 +68,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           throw new JspmError(`jspm cc does not take any arguments.`);
 
         console.log(`${chalk.bold.yellow('warm')} TODO: jspm cache clear currently unimplemented.`);
+        break;
       }
 
       case 'checkout': {
@@ -143,10 +144,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
       case 'map': {
         const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['log', 'deno', 'production', 'node', 'lock', 'freeze'],
+          boolFlags: ['log', 'deno', 'production', 'node', 'lock', 'freeze', 'system'],
           strFlags: ['log', 'out', 'stdlib'],
           arrFlags: ['env'],
-          aliases: { 'o': 'out', 'p': 'production', 'l': 'lock' }
+          aliases: { 'o': 'out', 'p': 'production', 'l': 'lock', 's': 'system', 'x': 'freeze' }
         });
 
         opts.env = [...opts.env as string[] || [], ...opts.deno ? ['deno', 'node'] : opts.node ? ['node'] : ['browser']];

@@ -22,7 +22,7 @@ import { JspmError } from '../common/err.ts';
 import path from 'path';
 
 export async function run (script: string, args: string[]) {
-  const pjsonPath = await resolver.getPackageBase(pathToFileURL(process.env.PWD || process.cwd()).href);
+  const pjsonPath = await resolver.getPackageBase(pathToFileURL((process.env.PWD || process.cwd()) + '/').href);
   if (!pjsonPath)
     throw new JspmError(`Unable to find a package.json file.`);
   const pjson = JSON.parse(await readFile(new URL('package.json', pjsonPath)));

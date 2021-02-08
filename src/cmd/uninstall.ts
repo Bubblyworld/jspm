@@ -20,7 +20,7 @@ export async function uninstall (names: string | string[]): Promise<boolean> {
   });
 
   if (changed) {
-    const traceMap = new TraceMap(baseUrl, { fullInstall: true });
+    const traceMap = new TraceMap(baseUrl, { prune: true });
 
     const finishInstall = await traceMap.startInstall();
     try {
