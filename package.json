@@ -7,7 +7,9 @@
     "build": "npm run build-node && npm run build-api",
     "build-node": "ncc build -t src/node.js -e sver -s -e es-module-lexer",
     "watch-build-node": "ncc build -t src/node.js -s -e sver -e es-module-lexer -w",
-    "test": "deno run --allow-net --no-check src/inject/script-lexer.ts"
+    "test": "jspm run test:script-lexer && jspm run test:dom",
+    "test:dom": "jspm deno -x --no-check --allow-read --allow-net src/inject/dom-manipulator.ts",
+    "test:script-lexer": "jspm deno -x --no-check --allow-net src/inject/script-lexer.ts"
   },
   "exports": {
     "publish": "./dist/index.js",
@@ -20,6 +22,7 @@
   "dependencies": {
     "@iarna/toml": "^3.0.0",
     "es-module-lexer": "^0.3.26",
+    "magic-string": "^0.25.7",
     "mkdirp": "^1.0.4",
     "sver": "^1.8.3"
   },

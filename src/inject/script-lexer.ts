@@ -1,6 +1,7 @@
 let source: string, i: number;
 
-export interface ParsedScript {
+export interface ParsedTag {
+  name: string;
   start: number;
   end: number;
   attributes: ParsedAttribute[],
@@ -9,57 +10,75 @@ export interface ParsedScript {
 };
 
 export interface ParsedAttribute {
+  name: string;
+  value: string;
   nameStart: number;
   nameEnd: number;
   valueStart: number;
   valueEnd: number;
 };
 
-export function parseScripts (_source: string) {
-  const scripts = [];
+const scriptSkeleton = new Set(['script', 'link', 'head', 'body']);
+const selfClosing = new Set(['area', 'base', 'br', 'embed', 'hr', 'iframe', 'img', 'input', 'link', 'meta', 'param', 'source', 'track']);
+
+export function parseTags (_source: string, include = scriptSkeleton) {
+  const tags = [];
   source = _source;
   i = 0;
 
-  let curScript: ParsedScript = { start: -1, end: -1, attributes: [], innerStart: -1, innerEnd: -1 };
+  let curTag: ParsedTag = { name: '', start: -1, end: -1, attributes: [], innerStart: -1, innerEnd: -1 };
   while (i < source.length) {
     while (source.charCodeAt(i++) !== 60 /*<*/)
-      if (i === source.length) return scripts;
-    const x = i;
-    i = x;
-    switch (readTagName()) {
-      case '!--':
-        while (source.charCodeAt(i) !== 45/*-*/ || source.charCodeAt(i + 1) !== 45/*-*/ || source.charCodeAt(i + 2) !== 62/*>*/)
-          if (++i === source.length) return scripts;
-        i += 3;
-        break;
-      case 'script':
-        curScript.start = i - 8;
-        let attr;
-        while (attr = scanAttr())
-          curScript.attributes.push(attr);
-        curScript.innerStart = i;
+      if (i === source.length) return tags;
+    const name = readTagName();
+    if (name === undefined)
+      return tags;
+    if (name === '!--') {
+      while (source.charCodeAt(i) !== 45/*-*/ || source.charCodeAt(i + 1) !== 45/*-*/ || source.charCodeAt(i + 2) !== 62/*>*/)
+        if (++i === source.length) return tags;
+      i += 3;
+    }
+    else if (include.has(name)) {
+      tags.push(curTag);
+      curTag.name = name;
+      curTag.start = i - name.length - (source.charCodeAt(i) === 62 ? 1 : 2);
+      let attr;
+      while (attr = scanAttr())
+        curTag.attributes.push({ name: source.slice(attr.nameStart, attr.nameEnd), value: source.slice(attr.valueStart, attr.valueEnd), ...attr });
+      curTag.innerStart = i;
+      curTag.innerEnd = curTag.end = curTag.innerStart;
+      if (!selfClosing.has(name)) {
         while (true) {
           while (source.charCodeAt(i++) !== 60 /*<*/)
-            if (i === source.length) return scripts;
+            if (i === source.length) return tags;
           const tag = readTagName();
-          if (tag === undefined) return scripts;
-          if (tag === '/script') {
-            curScript.innerEnd = i - 8;
-            while (scanAttr());
-            curScript.end = i;
+          if (tag === undefined) {
+            if (curTag.name !== '') {
+              curTag.end = curTag.innerEnd;
+              tags.push(curTag);
+            }
+            return tags;
+          }
+          if (name !== 'script' || tag === '/' + name) {
+            curTag.innerEnd = i - 1 - tag.length;
+            if (tag[0] !== '/') {
+              i -= tag.length + (source.charCodeAt(i) === 62 ? 1 : 2);
+            }
+            else {
+              while (scanAttr());
+              curTag.end = i;
+            }
             break;
           }
         }
-        scripts.push(curScript);
-        curScript = { start: -1, end: -1, attributes: [], innerStart: -1, innerEnd: -1 };
-        break;
-      case undefined:
-        return scripts;
-      default:
-        while (scanAttr());
+      }
+      curTag = { name: '', start: -1, end: -1, attributes: [], innerStart: -1, innerEnd: -1 };
+    }
+    else {
+      while (scanAttr());
     }
   }
-  return scripts;
+  return tags;
 }
 
 function readTagName () {
@@ -72,14 +91,14 @@ function readTagName () {
 
 function scanAttr () {
   let ch;
-  while (isWs(ch = source.charCodeAt(i)))
+  while (isWsOrSlash(ch = source.charCodeAt(i)))
     if (++i === source.length) return;
   if (ch === 62 /*>*/) {
     i++;
     return;
   }
   const nameStart = i;
-  while (!isWs(ch = source.charCodeAt(i++)) && ch !== 61 /*=*/) {
+  while (!isWsOrSlash(ch = source.charCodeAt(i++)) && ch !== 61 /*=*/) {
     if (i === source.length) return;
     if (ch === 62 /*>*/)
       return { nameStart, nameEnd: --i, valueStart: -1, valueEnd: -1 };
@@ -117,11 +136,15 @@ function scanAttr () {
   }
 }
 
+function isWsOrSlash (ch: number) {
+  return ch === 32 || ch < 14 && ch > 8 || ch === 47;
+}
+
 function isWs (ch: number) {
   return ch === 32 || ch < 14 && ch > 8;
 }
 
-function logScripts (source: string, scripts: ParsedScript[]) {
+function logScripts (source: string, scripts: ParsedTag[]) {
   for (const script of scripts) {
     for (const { nameStart, nameEnd, valueStart, valueEnd } of script.attributes) {
       console.log('Name: ' + source.slice(nameStart, nameEnd));
@@ -140,9 +163,10 @@ if (import.meta.main) {
     const source = `
       <script type="module">test</script>
       <script src="hi" jspm-preload></script>
+      <link rel="modulepreload" />
     `;
-    const scripts = parseScripts(source);
-    assertStrictEquals(scripts.length, 2);
+    const scripts = parseTags(source);
+    assertStrictEquals(scripts.length, 3);
     assertStrictEquals(scripts[0].attributes.length, 1);
     const attr = scripts[0].attributes[0];
     assertStrictEquals(source.slice(attr.nameStart, attr.nameEnd), "type");
@@ -154,6 +178,10 @@ if (import.meta.main) {
     assertStrictEquals(scripts[1].start, 49);
     assertStrictEquals(scripts[1].end, 88);
     assertStrictEquals(scripts[1].attributes.length, 2);
+    assertStrictEquals(scripts[2].attributes.length, 1);
+    const attr2 = scripts[2].attributes[0];
+    assertStrictEquals(source.slice(attr2.nameStart, attr2.nameEnd), "rel");
+    assertStrictEquals(source.slice(attr2.valueStart, attr2.valueEnd), "modulepreload");
   }
   console.groupEnd();
 
@@ -185,7 +213,7 @@ if (import.meta.main) {
     
 
     `;
-    const scripts = parseScripts(source);
+    const scripts = parseTags(source);
     assertStrictEquals(scripts.length, 2);
     assertStrictEquals(scripts[0].attributes.length, 1);
     let attr = scripts[0].attributes[0];
@@ -211,6 +239,17 @@ if (import.meta.main) {
     assertStrictEquals(scripts[1].innerEnd, 331);
     assertStrictEquals(scripts[1].start, 246);
     assertStrictEquals(scripts[1].end, 356);
+  }
+  console.groupEnd();
+
+  console.group('unclosed tags');
+  {
+    const scripts = parseTags(`
+      <head>
+        <script type="importmap"></script>
+      <body>
+    `);
+    assertStrictEquals(scripts.length, 3);
   }
   console.groupEnd();
 }

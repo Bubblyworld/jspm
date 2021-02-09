@@ -1,3 +1,8 @@
+declare module 'magic-string' {
+  export * from 'https://unpkg.com/magic-string@0.25.7/index.d.ts';
+  export { default } from 'https://unpkg.com/magic-string@0.25.7/index.d.ts';
+}
+
 declare module 'chalk' {
   import * as chalk from 'https://unpkg.com/chalk@4.1.0/index.d.ts';
   export default chalk;

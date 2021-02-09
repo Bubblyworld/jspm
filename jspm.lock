@@ -11,6 +11,7 @@ chalk = "https://ga.jspm.io/npm:chalk@4.1.0"
 crypto = "./core/dist|nodelibs/crypto"
 es-module-lexer = "https://ga.jspm.io/npm:es-module-lexer@0.3.26"
 fs = "./core/dist|nodelibs/fs"
+magic-string = "https://ga.jspm.io/npm:magic-string@0.25.7"
 make-fetch-happen = "https://ga.jspm.io/npm:make-fetch-happen@8.0.13"
 mkdirp = "https://ga.jspm.io/npm:mkdirp@1.0.4"
 module = "./core/dist|nodelibs/module"
@@ -213,6 +214,13 @@ url = "https://ga.jspm.io/npm:lru-cache@6.0.0"
 
 [package.deps]
 yallist = "https://ga.jspm.io/npm:yallist@4.0.0"
+
+[[package]]
+url = "https://ga.jspm.io/npm:magic-string@0.25.7"
+
+[package.deps]
+buffer = "./core/dist|nodelibs/buffer"
+sourcemap-codec = "https://ga.jspm.io/npm:sourcemap-codec@1.4.8"
 
 [[package]]
 url = "https://ga.jspm.io/npm:make-fetch-happen@8.0.13"
