@@ -1,17 +1,19 @@
 import { InstallOptions, InstallTarget } from "../install/installer.ts";
-import { baseUrl, importedFrom, isPlain } from "../common/url.ts";
+import { baseUrl, importedFrom, isPlain, relativeUrl } from "../common/url.ts";
 import { Installer } from "../install/installer.ts";
 import { log } from "../common/log.ts";
 import { JspmError, throwInternalError } from "../common/err.ts";
 import { parsePkg } from "../install/package.ts";
 import { getMapMatch, getScopeMatches, IImportMap, ImportMap } from "./map.ts";
 import resolver from "../install/resolver.ts";
+import { Script } from "../inject/map";
 
 export interface TraceMapOptions extends InstallOptions {
+  system?: boolean;
   env?: string[];
 
-  // input map (deprecate?)
-  inMap?: IImportMap;
+  // input map
+  inputMap?: IImportMap;
   // do not trace dynamic imports
   static?: boolean;
 
@@ -33,6 +35,7 @@ interface TraceEntry {
   size: number;
   integrity: string;
   system: boolean;
+  babel: boolean;
 }
 
 // The tracemap fully drives the installer
@@ -45,14 +48,16 @@ export default class TraceMap {
   mapBase: URL;
   pjsonBase: URL | undefined;
   traces = new Set<string>();
+  staticList = new Set<string>();
+  dynamicList = new Set<string>();
 
   constructor (mapBase: URL, opts: TraceMapOptions = {}) {
     this.mapBase = mapBase;
     this.opts = opts;
     if (this.opts.env)
       this.env = this.opts.env;
-    if (opts.inMap)
-      this.map = opts.inMap instanceof ImportMap ? opts.inMap : new ImportMap(mapBase).extend(opts.inMap);
+    if (opts.inputMap)
+      this.map = opts.inputMap instanceof ImportMap ? opts.inputMap : new ImportMap(mapBase).extend(opts.inputMap);
     else
       this.map = new ImportMap(mapBase);
   }
@@ -72,6 +77,29 @@ export default class TraceMap {
       await this.visit(entry.deps[dep], visitor, seen);
     }
     await visitor(url, entry);
+  }
+
+  getPreloads (integrity: boolean, baseUrl: URL): Script[] {
+    return [...this.staticList].map(url => {
+      const relUrl = relativeUrl(new URL(url), baseUrl)
+      return {
+        url: relUrl.startsWith('./') ? relUrl.slice(2) : relUrl,
+        integrity: integrity ? this.tracedUrls[url].integrity : false,
+        jspm: !url.startsWith('https://ga.jspm.io/') && !url.startsWith('https://system.ga.jspm.io/')
+      };
+    });
+  }
+
+  checkTypes () {
+    let system = false, esm = false;
+    for (const url of [...this.staticList, ...this.dynamicList]) {
+      const trace = this.tracedUrls[url];
+      if (trace.system)
+        system = true;
+      else
+        esm = true;
+    }
+    return { system, esm };
   }
 
   async startInstall () {
@@ -103,8 +131,10 @@ export default class TraceMap {
         } while (this.installer!.newInstalls);
 
         // now second-pass visit the trace to gather the exact graph and collect the import map
+        let list = this.staticList;
         const discoveredDynamics = new Set<string>();
         const depVisitor = async (url: string, entry: TraceEntry) => {
+          list.add(url);
           const parentPkgUrl = await resolver.getPackageBase(url);
           for (const dep of Object.keys(entry.dynamicDeps)) {
             const resolvedUrl = entry.dynamicDeps[dep][0];
@@ -127,6 +157,7 @@ export default class TraceMap {
           await this.visit(url, depVisitor, seen);
         }
 
+        list = this.dynamicList;
         for (const url of discoveredDynamics) {
           await this.visit(url, depVisitor, seen);
         }
@@ -242,7 +273,8 @@ export default class TraceMap {
       hasStaticParent: true,
       size: NaN,
       integrity: '',
-      system: false
+      system: false,
+      babel: false
     };
     const { deps, dynamicDeps, integrity, size, system } = await resolver.analyze(resolvedUrl, parentUrl, this.opts.system);
     traceEntry.integrity = integrity;

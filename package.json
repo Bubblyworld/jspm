@@ -6,9 +6,10 @@
   "scripts": {
     "build": "npm run build-node && npm run build-api",
     "build-node": "ncc build -t src/node.js -e sver -s -e es-module-lexer",
-    "watch-build-node": "ncc build -t src/node.js -s -e sver -e es-module-lexer -w",
-    "test": "jspm run test:script-lexer && jspm run test:dom",
-    "test:dom": "jspm deno -x --no-check --allow-read --allow-net src/inject/dom-manipulator.ts",
+    "watch-build-node": "ncc build -t src/node.js -s -e sver -e es-module-lexer -w --no-asset-builds",
+    "test": "jspm run test:script-lexer && jspm run test:dom && jspm run test:inject",
+    "test:inject": "jspm deno -x --no-check --allow-read --allow-net src/inject/map.ts",
+    "test:dom": "jspm deno -x --no-check --allow-read --allow-net src/inject/dom-utils.ts",
     "test:script-lexer": "jspm deno -x --no-check --allow-net src/inject/script-lexer.ts"
   },
   "exports": {
@@ -24,7 +25,9 @@
     "es-module-lexer": "^0.3.26",
     "magic-string": "^0.25.7",
     "mkdirp": "^1.0.4",
-    "sver": "^1.8.3"
+    "sver": "^1.8.3",
+    "jquery": "^3.5.1",
+    "react": "^17.0.1"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.27.0",

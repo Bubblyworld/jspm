@@ -164,9 +164,10 @@ export class ImportMap implements IImportMap {
     const oldBaseUrl = this.baseUrl;
     this.baseUrl = new URL(newBaseUrl, baseUrl);
     if (!this.baseUrl.pathname.endsWith('/')) this.baseUrl.pathname += '/';
+    // unnormalized targets starting with / are ignored
     for (const impt of Object.keys(this.imports)) {
       const target = this.imports[impt];
-      if (target !== null)
+      if (target !== null && target[0] !== '/')
         this.imports[impt] = relativeUrl(new URL(target, oldBaseUrl), this.baseUrl);
     }
     for (const scope of Object.keys(this.scopes)) {
@@ -178,7 +179,7 @@ export class ImportMap implements IImportMap {
       }
       for (const name of Object.keys(scopeImports)) {
         const target = scopeImports[name];
-        if (target !== null)
+        if (target !== null && target[0] !== '/')
           scopeImports[name] = relativeUrl(new URL(target, oldBaseUrl), this.baseUrl);
       }
     }
@@ -222,12 +223,17 @@ export class ImportMap implements IImportMap {
     throw new JspmError(`Unable to resolve "${specifier}" from ${parentUrl.href}`, 'MODULE_NOT_FOUND');
   }
 
-  toString (minify?: boolean) {
+  toJSON () {
     const obj: any = {};
     if (Object.keys(this.imports).length) obj.imports = this.imports;
     if (Object.keys(this.scopes).length) obj.scopes = this.scopes;
     if (Object.keys(this.integrity).length) obj.integrity = this.integrity;
     if (Object.keys(this.depcache).length) obj.depcache = this.depcache;
+    return obj;
+  }
+
+  toString (minify?: boolean) {
+    const obj = this.toJSON();
     return json.stringifyStyled(obj, minify ? Object.assign(this.mapStyle, { indent: '', tab: '', newline: '' }) : this.mapStyle);
   }
 }

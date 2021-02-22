@@ -40,7 +40,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
     switch (cmd) {
       case 'install': {
         const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['log', 'dev', 'peer', 'optional', 'reset'],
+          boolFlags: ['log', 'dev', 'peer', 'optional', 'reset', 'save', 'save-dev', 'save-peer', 'save-optional', 'lock'],
           strFlags: ['log', 'stdlib']
         });
         spinner = await startSpinnerLog(log);
@@ -98,7 +98,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         const jspmStrFlags = ['stdlib'];
 
         // Deno flags inlined because we merge in jspm flag handling here
-        const { opts, args } = readFlags(rawArgs.slice(0, execArgIndex), {
+        const { opts } = readFlags(rawArgs.slice(0, execArgIndex), {
           boolFlags: ['log', 'allow-all', 'allow-env', 'allow-hrtime', 'allow-net', 'allow-plugin',
               'allow-read', 'allow-run', 'allow-write', 'cached-only', 'lock-write', 'quiet', 'watch', 'no-check', ...jspmBoolFlags],
           strFlags: ['log', 'allow-net', 'allow-read', 'allow-write', 'inspect', 'inspect-brk',
@@ -144,10 +144,10 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
       case 'map': {
         const { args, opts } = readFlags(rawArgs, {
-          boolFlags: ['log', 'deno', 'production', 'node', 'lock', 'freeze', 'system'],
-          strFlags: ['log', 'out', 'stdlib'],
+          boolFlags: ['log', 'deno', 'production', 'node', 'lock', 'freeze', 'system', 'minify', 'preload', 'integrity'],
+          strFlags: ['log', 'out', 'stdlib', 'input-map'],
           arrFlags: ['env'],
-          aliases: { 'o': 'out', 'p': 'production', 'l': 'lock', 's': 'system', 'x': 'freeze' }
+          aliases: { 'o': 'out', 'p': 'production', 'l': 'lock', 's': 'system', 'x': 'freeze', 'm': 'input-map', 'M': 'minify' }
         });
 
         if (!args.length)
@@ -163,13 +163,14 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         spinner = await startSpinnerLog(log);
         spinner.text = `Mapping for ${opts.env.join(', ')}...`;
         const { map } = await import('./cmd/map.ts');
-        let { changed, importMap } = await map(args, opts as TraceMapOptions);
+        const { changed, output } = await map(args, opts as TraceMapOptions);
         spinner.stop();
-        const output = importMap.toString();
+        
         if (opts.out === undefined) {
           console.log(output);
           break;
         }
+
         let existingMap;
         try {
           existingMap = readFileSync(opts.out).toString();
@@ -278,7 +279,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
               ok(`Found ${chalk.bold('package.json')} and ${chalk.bold('jspm.lock')}.`);
             }
             else {
-              console.log(`${chalk.bold.yellow('warn  ')} Run ${chalk.bold('jspm install')} or ${chalk.bold('jspm map --lock')} to start using a dedicated lockfile for installs.`);
+              console.log(`${chalk.bold.grey('info  ')} Run ${chalk.bold('jspm install --lock')} or ${chalk.bold('jspm map --lock')} to start using a dedicated lockfile for installs.`);
             }
           }
           else {
@@ -397,13 +398,9 @@ const help: Record<string, [string, string] | [string, string, string]> = {
     'Clear the jspm local URL cache', `
     jspm cc
 
-  ${chalk.bold('Note: This feature is currently unimplemented and supports is pending.')}
-
   Clears the jspm version cache.
 
-  * When running under Deno, clears all jspm CDN URLs from the Deno cache.
-  * When running under Node.js, clears all jspm CDN permacache URLs from the
-    custom fetch cache.
+  ${chalk.bold('Note: Only works for the Node.js JSPM build currently.')}
     `
   ],
 
@@ -464,7 +461,7 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
   Internally, the module is first linked via "jspm map <module>" in order to
   automaticaly construct a temporary import map to provide to Deno run.
 
-  See "jspm help map" for more information on jspm just-in-time linking.
+  See "jspm help map" for more information on JSPM just-in-time linking.
 
   ${chalk.bold('Example:')}
     
@@ -495,14 +492,20 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
     'Link a module for execution', `
     jspm map [module]+
 
-  Traces the given modules and links them using the lockfile dependency
-  resolutions, outputting the corresponding import map for the subgraph.
+  Traces the given modules resolving packages via the local lockfile or
+  installing them if necessary. The exact import map corresponding to the
+  traced resolutions is then returned.
 
   Linking will use the local lockfile by default, including persisting
   any new resolutions to the lockfile only if it exists, unless specified
   otherwise via the --freeze or --lock flags.
 
   The default linkage environment is "browser", "development".
+
+  The --out flag allows specifying where the map should be written to. When
+  specifying an HTML file as the output, the import map will be carefully
+  injected into an existing HTML file along with support for preload, integrity
+  and SystemJS HTML injectons.
 
   Options:
     -d, --deno                Resolve modules for the "deno" environment.
@@ -512,6 +515,9 @@ es-module-lexer = "./deps/es-module-lexer"`), '    ')}
     -x  --freeze              Do not make any changes to the lockfile.
         --lock                Create a lockfile if it does not already exist.
         [--env=custom]+       Resolve modules for custom environment names.
+    -o  --out <file>          Output the import map to a local file.
+        --out <file.html>     Output the import map as an HTML injection.
+    -m  --input-map <file>    Append the map to an existing import map.
 
   For more information on how module resolution works and the way conditional
   environment resolution applies, see the JSPM module resolution guide at

@@ -294,6 +294,16 @@ export class Resolver {
     }
   }
 
+  private async parseTs (source: string) {
+    const ts = await import('typescript');
+    return ts.transpileModule(source, {
+      compilerOptions: {
+        jsx: 'react',
+        module: ts.ModuleKind.ESNext
+      }
+    }).outputText;
+  }
+
   async analyze (resolvedUrl: string, parentUrl?: URL, system = false): Promise<Analysis> {
     const res = await fetch(resolvedUrl, this.fetchOpts);
     switch (res.status) {
@@ -305,6 +315,8 @@ export class Resolver {
     }
     let source = await res.text();
     try {
+      if (resolvedUrl.endsWith('.ts') || resolvedUrl.endsWith('.tsx') || resolvedUrl.endsWith('.jsx'))
+        source = await this.parseTs(source);
       const [imports] = await parse(source);
       return system ? createSystemAnalysis(source, imports, resolvedUrl) : createEsmAnalysis(imports, source, resolvedUrl);
     }

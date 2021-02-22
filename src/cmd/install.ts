@@ -10,7 +10,6 @@ export async function install (targets: string | string[], opts: TraceMapOptions
     targets = [targets];
   if (targets.length === 0)
     opts = { ...opts, prune: true };
-  opts = { ...opts, lock: true };
   const traceMap = new TraceMap(baseUrl, opts);
 
   const finishInstall = await traceMap.startInstall();

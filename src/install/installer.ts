@@ -99,7 +99,7 @@ export class Installer {
           return false;
         }
 
-        const save = this.hasLock || this.opts.lock;
+        const save = this.opts.save || this.opts.saveDev || this.opts.savePeer || this.opts.saveOptional || this.hasLock || this.opts.lock;
 
         // update the package.json dependencies
         let pjsonChanged = false;
@@ -138,10 +138,10 @@ export class Installer {
           await this.lockInstall([...new Set([...deps, ...existingBuiltins])], this.installBaseUrl, true);
         }
 
-        const changed = !save ? false : lock.saveVersionLock(this.installs, this.lockfilePath) || pjsonChanged;
+        const lockChanged = this.hasLock || this.opts.lock ? lock.saveVersionLock(this.installs, this.lockfilePath) : false;
         this.installing = false;
         resolve();
-        return changed;
+        return pjsonChanged || lockChanged;
       };
     });
     return finishInstall!;
@@ -283,7 +283,7 @@ export class Installer {
     return exactInstall;
   }
 
-  private async getInstalledPackages (pkg: InstallTarget): Promise<PackageInstallRange[]> {
+  private async getInstalledPackages (_pkg: InstallTarget): Promise<PackageInstallRange[]> {
     // TODO: to finish up version deduping algorithm, we need this
     // operation to search for all existing installs in this.installs
     // that have a target matching the given package
@@ -298,7 +298,7 @@ export class Installer {
       const pkg = resolver.parseUrlPkg(pkgUrl);
       if (pkg && this.inRange(pkg, matchPkg)) {
         if (bestMatch)
-          bestMatch = new Semver(bestMatch.version).compare(pkg.version) === -1 ? pkg : bestMatch;
+          bestMatch = Semver.compare(new Semver(bestMatch.version), pkg.version) === -1 ? pkg : bestMatch;
         else
           bestMatch = pkg;
       }

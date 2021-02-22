@@ -18,11 +18,11 @@ export interface ParsedAttribute {
   valueEnd: number;
 };
 
-const scriptSkeleton = new Set(['script', 'link', 'head', 'body']);
-const selfClosing = new Set(['area', 'base', 'br', 'embed', 'hr', 'iframe', 'img', 'input', 'link', 'meta', 'param', 'source', 'track']);
+const scriptSkeleton = new Set(['script', 'link', 'head', 'body', 'html', '!doctype']);
+const selfClosing = new Set(['area', 'base', 'br', 'embed', 'hr', 'iframe', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', '!doctype']);
 
 export function parseTags (_source: string, include = scriptSkeleton) {
-  const tags = [];
+  const tags: ParsedTag[] = [];
   source = _source;
   i = 0;
 

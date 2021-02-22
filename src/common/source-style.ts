@@ -24,7 +24,7 @@ export function detectNewline (source: string) {
 }
 
 export function detectIndent (source: string, newline: string) {
-  let indent = '';
+  let indent = undefined;
   // best-effort tab detection
   // yes this is overkill, but it avoids possibly annoying edge cases
   let lines = source.split(newline);
@@ -61,7 +61,9 @@ export function detectIndent (source: string, newline: string) {
     if (!bestTabSample || freq > tabSamples.get(bestTabSample)!)
       bestTabSample = sample;
   }
-  return { indent, tab: bestTabSample };
+  if (lines.length < 5 && lines.reduce((cnt, line) => cnt + line.length, 0) < 100)
+    bestTabSample = '  ';
+  return { indent: indent || '', tab: bestTabSample };
 }
 
 export function detectStyle (source: string): SourceStyle {
