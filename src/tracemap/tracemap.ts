@@ -234,6 +234,21 @@ export default class TraceMap {
       }
     }
 
+    // Own name import
+    const pcfg = await resolver.getPackageConfig(parentPkgUrl) || {};
+    if (pcfg.exports && pcfg.name === pkgName) {
+      const exports = await resolver.resolveExports(parentPkgUrl, env);
+      const match = getMapMatch(subpath, exports);
+      if (!match)
+        throw new JspmError(`No '${subpath}' exports subpath defined in ${parentPkgUrl} resolving ${pkgName}${importedFrom(parentUrl)}.`);
+      if (match) {
+        const resolved = new URL(exports[match] + subpath.slice(match.length), parentPkgUrl).href;
+        log('trace', `${specifier} ${parentUrl.href} -> ${resolved}`);
+        await this.traceUrl(resolved, parentUrl, env);
+        return resolved;
+      }
+    }
+
     // @ts-ignore
     const installed = this.opts.freeze ? this.installer?.installs[parentPkgUrl]?.[pkgName] : await this.installer?.install(pkgName, parentPkgUrl, parentUrl.href);
     if (installed) {

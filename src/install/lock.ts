@@ -74,7 +74,7 @@ export function loadVersionLock (lockFile: string): Lockfile {
   }
   catch {}
 
-  const { package: packages } = toml.parse(source ? source.toString() : '');
+  const { package: packages } = source ? toml.parse(source.toString()) : { package: null };
 
   if (!Array.isArray(packages))
     return { resolutions, exists };
