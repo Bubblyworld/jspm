@@ -4,6 +4,7 @@
   "license": "Apache-2.0",
   "version": "3.0.0-beta",
   "scripts": {
+    "build-api": "tsc -p . && rollup -c",
     "build": "npm run build-node && npm run build-api",
     "build-node": "ncc build -t src/node.js -e sver -s -e es-module-lexer",
     "watch-build-node": "ncc build -t src/node.js -s -e sver -e es-module-lexer -w --no-asset-builds",
