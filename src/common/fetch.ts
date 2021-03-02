@@ -1,5 +1,7 @@
-import { version } from '../version.ts';
-import { readFile } from 'fs/promises';
+import { version } from '../version.js';
+// @ts-ignore
+import { readFileSync } from 'fs';
+// @ts-ignore
 import { fileURLToPath } from 'url';
 
 declare global {
@@ -39,13 +41,14 @@ else {
 }
 
 const __fetch = _fetch;
+// @ts-ignore
 _fetch = async function (url: URL, ...args: any[]) {
   const urlString = url.toString();
   if (urlString.startsWith('file:') || urlString.startsWith('data:') || urlString.startsWith('node:')) {
     try {
       let source: string;
       if (urlString.startsWith('file:')) {
-        source = await readFile(fileURLToPath(urlString));
+        source = readFileSync(fileURLToPath(urlString));
       }
       else if (urlString.startsWith('node:')) {
         source = '';
@@ -74,6 +77,7 @@ _fetch = async function (url: URL, ...args: any[]) {
       return { status: 500, statusText: e.toString() };
     }
   }
+  // @ts-ignore
   if (typeof Deno !== 'undefined' /*&& args[0]?.cache === 'only-if-cached' */) {
     const { cache } = await import(eval('"../../deps/cache/mod.ts"'));
     try {
@@ -81,12 +85,15 @@ _fetch = async function (url: URL, ...args: any[]) {
       return {
         status: 200,
         async text () {
+          // @ts-ignore
           return (await Deno.readTextFile(file.path)).toString();
         },
         async json () {
+          // @ts-ignore
           return JSON.parse((await Deno.readTextFile(file.path)).toString());
         },
         async arrayBuffer () {
+          // @ts-ignore
           return (await Deno.readTextFile(file.path));
         }
       };
@@ -98,6 +105,7 @@ _fetch = async function (url: URL, ...args: any[]) {
       throw e;
     }
   }
+  // @ts-ignore
   return __fetch(url, ...args);
 } as typeof fetch;
 

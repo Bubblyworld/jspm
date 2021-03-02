@@ -144,6 +144,7 @@ function isWs (ch: number) {
   return ch === 32 || ch < 14 && ch > 8;
 }
 
+// @ts-ignore
 function logScripts (source: string, scripts: ParsedTag[]) {
   for (const script of scripts) {
     for (const { nameStart, nameEnd, valueStart, valueEnd } of script.attributes) {
@@ -156,7 +157,9 @@ function logScripts (source: string, scripts: ParsedTag[]) {
   }
 }
 
+// @ts-ignore
 if (import.meta.main) {
+  // @ts-ignore
   const { assertStrictEquals } = await import('https://deno.land/std/testing/asserts.ts');
   console.group('Simple script');
   {

@@ -1,6 +1,6 @@
-import { baseUrl } from '../common/url.ts';
-import { updatePjson } from "../install/pjson.ts";
-import TraceMap from '../tracemap/tracemap.ts';
+import { baseUrl } from '../common/url.js';
+import { updatePjson } from "../install/pjson.js";
+import TraceMap from '../tracemap/tracemap.js';
 
 export async function uninstall (names: string | string[]): Promise<boolean> {
   if (typeof names === 'string')

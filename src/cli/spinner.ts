@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { logStream } from "../common/log.ts";
+import { logStream } from "../common/log.js";
 
 declare global {
   var require: any;
@@ -22,6 +22,7 @@ export async function startSpinnerLog (log: boolean | string) {
   let spinner;
   if (!log) {
     let ora;
+    // @ts-ignore
     if (typeof Deno !== 'undefined') {
       ({ wait: ora } = await import(eval('"https://deno.land/x/wait/mod.ts"')));
     }

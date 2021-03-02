@@ -1,11 +1,11 @@
-import { InstallOptions, InstallTarget } from "../install/installer.ts";
-import { baseUrl, importedFrom, isPlain, relativeUrl } from "../common/url.ts";
-import { Installer } from "../install/installer.ts";
-import { log } from "../common/log.ts";
-import { JspmError, throwInternalError } from "../common/err.ts";
-import { parsePkg } from "../install/package.ts";
-import { getMapMatch, getScopeMatches, IImportMap, ImportMap } from "./map.ts";
-import resolver from "../install/resolver.ts";
+import { InstallOptions, InstallTarget } from "../install/installer.js";
+import { baseUrl, importedFrom, isPlain, relativeUrl } from "../common/url.js";
+import { Installer } from "../install/installer.js";
+import { log } from "../common/log.js";
+import { JspmError, throwInternalError } from "../common/err.js";
+import { parsePkg } from "../install/package.js";
+import { getMapMatch, getScopeMatches, IImportMap, ImportMap } from "./map.js";
+import resolver from "../install/resolver.js";
 import { Script } from "../inject/map";
 
 export interface TraceMapOptions extends InstallOptions {
@@ -86,7 +86,7 @@ export default class TraceMap {
         url: relUrl.startsWith('./') ? relUrl.slice(2) : relUrl,
         integrity: integrity ? this.tracedUrls[url].integrity : false,
         jspm: !url.startsWith('https://ga.jspm.io/') && !url.startsWith('https://system.ga.jspm.io/')
-      };
+      } as Script;
     });
   }
 
@@ -234,6 +234,7 @@ export default class TraceMap {
       }
     }
 
+    // @ts-ignore
     const installed = this.opts.freeze ? this.installer?.installs[parentPkgUrl]?.[pkgName] : await this.installer?.install(pkgName, parentPkgUrl, parentUrl.href);
     if (installed) {
       let [pkgUrl, subpathFilter] = installed.split('|');

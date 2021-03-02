@@ -1,10 +1,13 @@
 import { createHash } from 'crypto';
-import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.ts';
-import { baseUrl } from '../common/url.ts';
+import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.js';
+import { baseUrl } from '../common/url.js';
+// @ts-ignore
 import { readFileSync, writeFileSync } from 'fs';
-import { runCmd } from '../common/cmd.ts';
-import { isPackageTarget, toPackageTarget } from "../install/package.ts";
+import { runCmd } from '../common/cmd.js';
+import { isPackageTarget, toPackageTarget } from "../install/package.js";
+// @ts-ignore
 import process from 'process';
+// @ts-ignore
 import { pathToFileURL } from 'url';
 
 function computeMapHash (projectBase: string, moduleUrl: string) {
@@ -35,6 +38,7 @@ export async function deno (targetStr: string, flags: string[] = [], args: strin
     const { mapPrefix, mapSuffix } = computeMapHash(process.cwd(), targetStr);
     if (mapSuffix) {
       try {
+        // @ts-ignore
         const existingMap = readFileSync(tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap').toString();
         // JSON.parse(existingMap);
         mapFile = tmpDir + '/' + mapPrefix + '-' + mapSuffix + '.importmap';

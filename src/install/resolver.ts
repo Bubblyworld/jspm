@@ -1,17 +1,22 @@
-import { ExactPackage, PackageConfig, PackageTarget, ExportsTarget } from './package.ts';
-import { JspmError, throwInternalError } from '../common/err.ts';
-import { log } from '../common/log.ts';
-import { fetch } from '../common/fetch.ts';
-import { importedFrom } from "../common/url.ts";
-import { computeIntegrity } from "../common/integrity.ts";
+import { ExactPackage, PackageConfig, PackageTarget, ExportsTarget } from './package.js';
+import { JspmError } from '../common/err.js';
+import { log } from '../common/log.js';
+import { fetch } from '../common/fetch.js';
+import { importedFrom } from "../common/url.js";
+import { computeIntegrity } from "../common/integrity.js";
+// @ts-ignore
 import { parse } from 'es-module-lexer';
-import { Pool } from '../common/pool.ts';
+import { Pool } from '../common/pool.js';
+// @ts-ignore
 import { existsSync, writeFileSync } from 'fs';
 import mkdirp from 'mkdirp';
+// @ts-ignore
 import { Buffer } from 'buffer';
 import path from 'path';
-import { providers, registryProviders } from '../providers/index.ts';
+import { providers, registryProviders } from '../providers/index.js';
+// @ts-ignore
 import process from 'process';
+// @ts-ignore
 import { pathToFileURL } from 'url';
 
 export class Resolver {
@@ -137,7 +142,7 @@ export class Resolver {
     const pkg = await provider.resolveLatestTarget.call(this, target, unstable, parentUrl);
     if (pkg)
       return pkg;
-      throw new JspmError(`Unable to resolve package ${target.registry}:${target.name} to "${target.ranges.join(' || ')}"${importedFrom(parentUrl)}`);
+    throw new JspmError(`Unable to resolve package ${target.registry}:${target.name} to "${target.ranges.join(' || ')}"${importedFrom(parentUrl)}`);
   }
 
   async resolveExports (pkgUrl: string, env: string[], subpathFilter?: string): Promise<Record<string, string>> {
@@ -295,6 +300,7 @@ export class Resolver {
   }
 
   private async parseTs (source: string) {
+    // @ts-ignore
     const ts = await import('typescript');
     return ts.transpileModule(source, {
       compilerOptions: {

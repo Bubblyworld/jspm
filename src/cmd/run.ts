@@ -13,19 +13,22 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+// @ts-ignore
 import process from 'process';
-import { isWindows, PATH, PATHS_SEP } from '../common/env.ts';
+import { isWindows, PATH, PATHS_SEP } from '../common/env.js';
+// @ts-ignore
 import { pathToFileURL, fileURLToPath } from 'url';
-import { readFile } from 'fs/promises';
-import resolver from '../install/resolver.ts';
-import { JspmError } from '../common/err.ts';
+// @ts-ignore
+import { readFileSync } from 'fs';
+import resolver from '../install/resolver.js';
+import { JspmError } from '../common/err.js';
 import path from 'path';
 
 export async function run (script: string, args: string[]) {
   const pjsonPath = await resolver.getPackageBase(pathToFileURL((process.env.PWD || process.cwd()) + '/').href);
   if (!pjsonPath)
     throw new JspmError(`Unable to find a package.json file.`);
-  const pjson = JSON.parse(await readFile(new URL('package.json', pjsonPath)));
+  const pjson = JSON.parse(readFileSync(new URL('package.json', pjsonPath)));
   const cmd = pjson.scripts[script];
   return await runCmd(cmd + ['', ...args].join(' '), fileURLToPath(pjsonPath));
 }
@@ -37,7 +40,9 @@ async function runCmd (script: string, projectPath = process.env.PWD || process.
   
   const pathArr = [];
   // pathArr.push(path.join(cwd, 'node-gyp-bin'));
+  // @ts-ignore
   pathArr.push(path.join(projectPath, 'node_modules', '.bin'));
+  // @ts-ignore
   pathArr.push(process.env[PATH]);
 
   Object.assign(env, process.env);
@@ -45,7 +50,9 @@ async function runCmd (script: string, projectPath = process.env.PWD || process.
   const sh = isWindows ? process.env.comspec || 'cmd' : 'sh';
   const shFlag = isWindows ? '/d /s /c' : '-c';
 
+  // @ts-ignore
   if (typeof Deno !== 'undefined') {
+    // @ts-ignore
     const ps = Deno.run({
       cmd: [sh, shFlag, script],
       env,
@@ -53,6 +60,7 @@ async function runCmd (script: string, projectPath = process.env.PWD || process.
     });
     if (pipe)
       return ps;
+    // @ts-ignore
     const { success, code, signal } = await ps.status();
     return code;
   }

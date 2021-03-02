@@ -1,8 +1,10 @@
 import toml from '@iarna/toml';
+// @ts-ignore
 import { readFileSync, writeFileSync } from 'fs';
-import { throwInternalError, JspmError } from '../common/err.ts';
+import { throwInternalError, JspmError } from '../common/err.js';
+// @ts-ignore
 import { pathToFileURL } from 'url';
-import { relativeUrl } from "../common/url.ts";
+import { relativeUrl } from "../common/url.js";
 
 export interface Lockfile {
   exists: boolean;

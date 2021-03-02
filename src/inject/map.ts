@@ -1,6 +1,6 @@
 import MagicString from 'magic-string';
-import { ParsedTag, parseTags } from './script-lexer.ts';
-import { removeElement, getOrCreateTag, setInnerWithIndentation, insertAfter, insertBefore } from './dom-utils.ts';
+import { ParsedTag, parseTags } from './script-lexer.js';
+import { removeElement, getOrCreateTag, setInnerWithIndentation, insertAfter, insertBefore } from './dom-utils.js';
 
 function isJspmUrl (url: string) {
   return url.startsWith('https://ga.jspm.io/') || url.startsWith('https://system.ga.jspm.io/') || url.match(/(^|\/)(s|system|system-babel)(\.min)?\.js$/);
@@ -72,7 +72,9 @@ export function inject (html: string, injection: Injection): string {
   return source.toString().replace(/^\s+$/mg, '');
 }
 
+// @ts-ignore
 if (import.meta.main) {
+  // @ts-ignore
   const { assertStrictEquals } = await import('https://deno.land/std/testing/asserts.ts');
   console.group('Injections Removal');
   {

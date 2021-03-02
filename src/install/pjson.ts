@@ -1,7 +1,8 @@
-import * as json from "../common/json.ts";
+import * as json from "../common/json.js";
+// @ts-ignore
 import { readFileSync, writeFileSync } from "fs";
-import resolver from "../install/resolver.ts";
-import { PackageConfig } from "../install/package.ts";
+import resolver from "../install/resolver.js";
+import { PackageConfig } from "../install/package.js";
 
 export type DependenciesField = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies';
 

@@ -1,14 +1,20 @@
+// @ts-ignore
 import { pathToFileURL, fileURLToPath } from 'url';
+// @ts-ignore
 import process from 'process';
 import path from 'path';
 
 declare global {
+  // @ts-ignore
   var document: any;
+  // @ts-ignore
   var location: any;
 }
 
 export let baseUrl: URL;
+// @ts-ignore
 if (typeof Deno !== 'undefined') {
+  // @ts-ignore
   baseUrl = pathToFileURL(Deno.cwd() + '/');
 }
 else if (typeof process !== 'undefined' && process.versions.node) {

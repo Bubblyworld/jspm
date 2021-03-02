@@ -1,14 +1,16 @@
-import './deps.ts';
+import './deps.d.ts';
 import chalk from 'chalk';
-import { JspmError } from "./common/err.ts";
-import { version } from "./version.ts";
-import { startSpinnerLog } from "./cli/spinner.ts";
-import { fromCamelCase, readFlags } from "./cli/flags.ts";
-import type { TraceMapOptions } from "./tracemap/tracemap.ts";
+import { JspmError } from "./common/err.js";
+import { version } from "./version.js";
+import { startSpinnerLog } from "./cli/spinner.js";
+import { fromCamelCase, readFlags } from "./cli/flags.js";
+import type { TraceMapOptions } from "./tracemap/tracemap.js";
+// @ts-ignore
 import process from 'process';
-import { indent, printFrame, indentGraph } from './cli/format.ts';
+import { indent, printFrame, indentGraph } from './cli/format.js';
+// @ts-ignore
 import { writeFileSync, readFileSync } from 'fs';
-import { urlToNiceStr } from './common/url.ts';
+import { urlToNiceStr } from './common/url.js';
 
 export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<number> {
   let spinner;
@@ -20,6 +22,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
   if (cmd && rawArgs.indexOf('--offline') !== -1 || rawArgs.indexOf('-z') !== -1) {
     rawArgs.splice(rawArgs.findIndex(flag => flag === '--offline' || flag === '-z'), 1);
+    // @ts-ignore
     const { setOffline } = await import('./install/resolver.ts');
     setOffline(true);
   }
@@ -45,6 +48,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         });
         spinner = await startSpinnerLog(log);
         spinner.text = `Installing${args.length ? ' ' + args.join(', ').slice(0, process.stdout.columns - 21) : ''}...`;
+        // @ts-ignore
         const { install } = await import('./cmd/install.ts');
         if (opts.dev)
           opts.saveDev = true;
@@ -77,6 +81,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         if (args.length !== 1)
           throw new JspmError(`A single package target must be provided to check out.`);
 
+        // @ts-ignore
         const { checkout } = await import('./cmd/checkout.ts');
         spinner = await startSpinnerLog(log);
         spinner.text = `Checking out ${args[0].slice(0, process.stdout.columns - 21)}...`;
@@ -122,6 +127,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
           if (typeof opts[flag] === 'string')
             denoFlags.push('--' + asSnakeCase + '=' + opts[flag]);
         }
+        // @ts-ignore
         const { deno } = await import('./cmd/deno.ts');
         const code = await deno(rawArgs[execArgIndex], denoFlags, rawArgs.slice(execArgIndex + 1), opts);
         return code;
@@ -162,6 +168,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
         spinner = await startSpinnerLog(log);
         spinner.text = `Mapping for ${opts.env.join(', ')}...`;
+        // @ts-ignore
         const { map } = await import('./cmd/map.ts');
         const { changed, output } = await map(args, opts as TraceMapOptions);
         spinner.stop();
@@ -198,6 +205,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         if (args.length > 1)
           throw new JspmError('Only one module must be passed to list');
 
+        // @ts-ignore
         const { list } = await import ('./cmd/list.ts');
         const { resolved, exports } = await list(args[0]);
 
@@ -206,6 +214,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
         for (const key of Object.keys(exports)) {
           const value = exports[key];
           if (typeof value === 'string') {
+            // @ts-ignore
             console.log(key + value.padStart(padding - key.length + value.length, ' '));
           }
           else if (value !== null) {
@@ -217,6 +226,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
               for (const key of Object.keys(obj)) {
                 const value = obj[key];
                 if (typeof value === 'string') {
+                  // @ts-ignore
                   lines.push(chalk.black.bold(key) + value.padStart(padding - key.length + value.length - curDepth, ' '));
                 }
                 else {
@@ -235,6 +245,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
       case 'uninstall': {
         const { args } = readFlags(rawArgs);
+        // @ts-ignore
         const { uninstall } = await import('./cmd/uninstall.ts');
 
         spinner = await startSpinnerLog(log);
@@ -250,6 +261,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
 
       case 'run': {
         const { args } = readFlags(rawArgs);
+        // @ts-ignore
         const { run } = await import('./cmd/run.ts');
         await run(args[0], args.slice(1));
         break;
@@ -271,6 +283,7 @@ export async function cli (cmd: string | undefined, rawArgs: string[]): Promise<
       default:
         const isInfo = !cmd || cmd === 'info';
         if (isInfo) {
+          // @ts-ignore
           const { info } = await import('./cmd/info.ts');
           const { projectPath, packageJSON, lockFile } = await info();
           if (packageJSON) {
@@ -319,6 +332,7 @@ function cmdList (cmds: string[], doubleSpace = false) {
   let maxCmdLen = 30;
   for (const cmd of cmds) {
     const [command, description] = help[cmd];
+    // @ts-ignore
     list.push(command.padEnd(maxCmdLen + 2, ' ') + description + (doubleSpace ? '\n' : ''));
   }
   return '\n    ' + list.join('\n    ');

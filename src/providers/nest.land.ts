@@ -1,7 +1,7 @@
-import { JspmError } from "../common/err.ts";
-import { importedFrom } from "../common/url.ts";
-import { ExactPackage, PackageTarget } from "../install/package.ts";
-import { Resolver } from "../install/resolver.ts";
+import { JspmError } from "../common/err.js";
+import { importedFrom } from "../common/url.js";
+import { ExactPackage, PackageTarget } from "../install/package.js";
+import { Resolver } from "../install/resolver.js";
 
 export const cdnUrl = 'https://x.nest.land/';
 
@@ -37,6 +37,6 @@ export async function resolveLatestTarget (this: Resolver, target: PackageTarget
     case 404:
       return null;
     default:
-      throw new JspmError(`Invalid status code ${res.status} looking up "${registry}:${name}" - ${res.statusText}${importedFrom(parentUrl)}`);
+      throw new JspmError(`Invalid status code ${res.status} looking up "${target.registry}:${target.name}" - ${res.statusText}${importedFrom(parentUrl)}`);
   }
 }

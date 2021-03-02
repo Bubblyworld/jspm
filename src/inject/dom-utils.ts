@@ -1,9 +1,10 @@
-import '../deps.ts';
+// @ts-ignore
+import '../deps.d.ts';
 import MagicString from 'magic-string';
-import { ParsedTag } from './script-lexer.ts';
-import { detectStyle } from '../common/source-style.ts';
-import { parseTags } from './script-lexer.ts';
-import { stringifyStyled } from '../common/json.ts';
+import { ParsedTag } from './script-lexer.js';
+import { detectStyle } from '../common/source-style.js';
+import { parseTags } from './script-lexer.js';
+import { stringifyStyled } from '../common/json.js';
 
 const ws = /\s+/;
 function detectSpace (source: string, index: number) {
@@ -116,7 +117,9 @@ export function getOrCreateTag (source: MagicString, els: ParsedTag[], detect: (
   return getOrCreateTag(new MagicString(output), parseTags(output), detect, null);
 }
 
+// @ts-ignore
 if (import.meta.main) {
+  // @ts-ignore
   const { assertStrictEquals } = await import('https://deno.land/std/testing/asserts.ts');
   console.group('Simple removal');
   {

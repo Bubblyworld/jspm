@@ -1,3 +1,4 @@
+// @ts-ignore
 import process from 'process';
 
 export const isWindows = process.platform === 'win32';

@@ -13,7 +13,9 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+// @ts-ignore
 import process from 'process';
+// @ts-ignore
 import { isWindows, PATH, PATHS_SEP } from '../common/env.ts';
 
 declare global {
@@ -27,6 +29,7 @@ export async function runCmd (script: string, projectPath = process.env.PWD || p
   const pathArr = [];
   // pathArr.push(path.join(cwd, 'node-gyp-bin'));
   // pathArr.push(path.join(projectPath, 'node_modules', '.bin'));
+  // @ts-ignore
   pathArr.push(process.env[PATH]);
 
   Object.assign(env, process.env);
@@ -34,12 +37,15 @@ export async function runCmd (script: string, projectPath = process.env.PWD || p
   const sh = isWindows ? process.env.comspec || 'cmd' : 'sh';
   const shFlag = isWindows ? '/d /s /c' : '-c';
 
+  // @ts-ignore
   if (typeof Deno !== 'undefined') {
+    // @ts-ignore
     const ps = Deno.run({
       cmd: [sh, shFlag, script],
       env,
       stdio: 'inherit'
     });
+    // @ts-ignore
     const { success, code, signal } = await ps.status();
     return code;
   }

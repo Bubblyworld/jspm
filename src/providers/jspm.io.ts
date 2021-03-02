@@ -1,12 +1,12 @@
-import { throwInternalError } from "../common/err.ts";
-import { JspmError } from "../common/err.ts";
-import { log } from "../common/log.ts";
-import { importedFrom } from "../common/url.ts";
-import { PackageTarget } from "../install/package.ts";
-import { pkgToStr } from "../install/package.ts";
-import { ExactPackage } from "../install/package.ts";
-import { Resolver } from "../install/resolver.ts";
-import { fetch } from '../common/fetch.ts';
+import { throwInternalError } from "../common/err.js";
+import { JspmError } from "../common/err.js";
+import { log } from "../common/log.js";
+import { importedFrom } from "../common/url.js";
+import { PackageTarget } from "../install/package.js";
+import { pkgToStr } from "../install/package.js";
+import { ExactPackage } from "../install/package.js";
+import { Resolver } from "../install/resolver.js";
+import { fetch } from '../common/fetch.js';
 
 export const cdnUrl = 'https://ga.jspm.io/';
 

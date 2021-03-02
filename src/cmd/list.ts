@@ -1,7 +1,9 @@
-import resolver from '../install/resolver.ts';
-import { ExportsTarget, toPackageTarget, pkgUrlToNiceString } from '../install/package.ts';
-import { JspmError } from '../common/err.ts';
+import resolver from '../install/resolver.js';
+import { ExportsTarget, toPackageTarget, pkgUrlToNiceString } from '../install/package.js';
+import { JspmError } from '../common/err.js';
+// @ts-ignore
 import { pathToFileURL } from 'url';
+// @ts-ignore
 import process from 'process';
 
 export async function list (module: string): Promise<{

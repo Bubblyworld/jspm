@@ -1,14 +1,17 @@
-import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.ts';
-import { baseUrl } from '../common/url.ts';
-import { pkgUrlToNiceString, toPackageTarget } from "../install/package.ts";
-import { JspmError } from "../common/err.ts";
+import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.js';
+import { baseUrl } from '../common/url.js';
+import { pkgUrlToNiceString, toPackageTarget } from "../install/package.js";
+import { JspmError } from "../common/err.js";
+// @ts-ignore
 import process from 'process';
+// @ts-ignore
 import { pathToFileURL } from 'url';
 
 export async function install (targets: string | string[], opts: TraceMapOptions): Promise<{ changed: boolean, installed: string[] }> {
   if (typeof targets === 'string')
     targets = [targets];
   if (targets.length === 0)
+    // @ts-ignore
     opts = { ...opts, prune: true };
   const traceMap = new TraceMap(baseUrl, opts);
 

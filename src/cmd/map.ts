@@ -1,10 +1,15 @@
-import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.ts';
-import { baseUrl } from '../common/url.ts';
-import { isPackageTarget, toPackageTarget } from "../install/package.ts";
+import TraceMap, { TraceMapOptions } from '../tracemap/tracemap.js';
+import { baseUrl } from '../common/url.js';
+import { isPackageTarget, toPackageTarget } from "../install/package.js";
+// @ts-ignore
 import { pathToFileURL } from 'url';
+// @ts-ignore
 import process from 'process';
+// @ts-ignore
 import { readFileSync } from 'fs';
+// @ts-ignore
 import { Script } from "../inject/map";
+// @ts-ignore
 import { pathToFileURL } from 'url';
 
 export interface MapOptions extends TraceMapOptions {
@@ -21,9 +26,12 @@ export async function map (modules: string | string[], opts: MapOptions): Promis
   if (typeof modules === 'string')
     modules = [modules];
 
+  // @ts-ignore
   opts = { ...opts, save: opts.lock && !opts.freeze };
 
+  // @ts-ignore
   if (typeof opts.inputMap === 'string')
+    // @ts-ignore
     opts.inputMap = JSON.parse(readFileSync(opts.inputMap).toString());
 
   const traceMap = new TraceMap(baseUrl, opts);
@@ -50,7 +58,9 @@ export async function map (modules: string | string[], opts: MapOptions): Promis
 
     let systemBabel = false;
     const { system, esm } = traceMap.checkTypes();
+    // @ts-ignore
     if (system || opts.system) {
+      // @ts-ignore
       opts.system = true;
       systemBabel = esm;
     }
@@ -59,6 +69,7 @@ export async function map (modules: string | string[], opts: MapOptions): Promis
     if (opts.preload || opts.integrity)
       preloads = traceMap.getPreloads(!!opts.integrity, baseUrl);
 
+    // @ts-ignore
     if (opts.system)
       map.replace('https://ga.jspm.io/', new URL('https://ga.system.jspm.io/'));
 
@@ -68,7 +79,9 @@ export async function map (modules: string | string[], opts: MapOptions): Promis
     }
     else {
       const html = readFileSync(opts.out).toString();
+      // @ts-ignore
       const { inject } = await import('../inject/map.ts');
+      // @ts-ignore
       const system = opts.system ? { url: '/system.js' } : null;
       output = inject(html, {
         importMap: map.toJSON(),

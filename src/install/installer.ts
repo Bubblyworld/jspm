@@ -1,14 +1,17 @@
+// @ts-ignore
 import sver from 'sver';
 const { Semver } = sver;
-import { log } from '../common/log.ts';
+import { log } from '../common/log.js';
+// @ts-ignore
 import { builtinModules } from 'module';
+// @ts-ignore
 import { fileURLToPath } from 'url';
-import * as lock from "./lock.ts";
-import resolver from "./resolver.ts";
-import { ExactPackage, newPackageTarget, PackageTarget } from "./package.ts";
-import { isURL, importedFrom } from "../common/url.ts";
-import { JspmError, throwInternalError } from "../common/err.ts";
-import { DependenciesField, updatePjson } from './pjson.ts';
+import * as lock from "./lock.js";
+import resolver from "./resolver.js";
+import { ExactPackage, newPackageTarget, PackageTarget } from "./package.js";
+import { isURL, importedFrom } from "../common/url.js";
+import { JspmError, throwInternalError } from "../common/err.js";
+import { DependenciesField, updatePjson } from './pjson.js';
 import path from 'path';
 
 export const builtinSet = new Set<string>(builtinModules);
@@ -57,6 +60,7 @@ export class Installer {
   installing = false;
   newInstalls = false;
   currentInstall = Promise.resolve();
+  // @ts-ignore
   stdlibTarget: InstallTarget = new URL('../../core/dist', import.meta.url);
   installBaseUrl: string;
   lockfilePath: string;

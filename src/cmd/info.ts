@@ -1,6 +1,9 @@
-import resolver from "../install/resolver.ts";
+import resolver from "../install/resolver.js";
+// @ts-ignore
 import { pathToFileURL, fileURLToPath } from 'url';
+// @ts-ignore
 import { existsSync } from 'fs';
+// @ts-ignore
 import process from 'process';
 
 export async function info (path: string = process.cwd() + '/') {

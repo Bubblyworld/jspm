@@ -1,10 +1,11 @@
-import { JspmError } from "../common/err.ts";
-import { baseUrl, isRelative } from "../common/url.ts";
+import { JspmError } from "../common/err.js";
+import { baseUrl, isRelative } from "../common/url.js";
+// @ts-ignore
 import sver from 'sver';
 import convertRange from 'sver/convert-range';
-import { InstallTarget } from "./installer.ts";
-import resolver from "./resolver.ts";
-import { urlToNiceStr } from "../common/url.ts";
+import { InstallTarget } from "./installer.js";
+import resolver from "./resolver.js";
+import { urlToNiceStr } from "../common/url.js";
 
 const { SemverRange } = sver;
 

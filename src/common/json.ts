@@ -1,5 +1,5 @@
-import { JspmError } from './err.ts';
-import { SourceStyle, detectStyle } from './source-style.ts';
+import { JspmError } from './err.js';
+import { SourceStyle, detectStyle } from './source-style.js';
 
 export function parseStyled (source: string, fileName?: string): { json: any, style: SourceStyle } {
   // remove any byte order mark

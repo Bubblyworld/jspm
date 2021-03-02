@@ -1,13 +1,18 @@
-import TraceMap from '../tracemap/tracemap.ts';
-import { baseUrl } from '../common/url.ts';
-import { toPackageTarget } from "../install/package.ts";
+import TraceMap from '../tracemap/tracemap.js';
+import { baseUrl } from '../common/url.js';
+import { toPackageTarget } from "../install/package.js";
+// @ts-ignore
 import { pathToFileURL } from 'url';
+// @ts-ignore
 import process from 'process';
-import { JspmError } from '../common/err.ts';
-import resolver from '../install/resolver.ts';
+import { JspmError } from '../common/err.js';
+import resolver from '../install/resolver.js';
+// @ts-ignore
 import { fileURLToPath } from 'url';
 
+// @ts-ignore
 export async function checkout (targetStr: string, depsDir: string = 'deps', beautify = false): Promise<string | null> {
+  // @ts-ignore
   const traceMap = new TraceMap(baseUrl, { install: true, save: true });
 
   const finishInstall = await traceMap.startInstall();

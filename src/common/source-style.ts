@@ -1,3 +1,4 @@
+// @ts-ignore
 import os from 'os';
 
 export interface SourceStyle {
@@ -24,7 +25,7 @@ export function detectNewline (source: string) {
 }
 
 export function detectIndent (source: string, newline: string) {
-  let indent = undefined;
+  let indent: string | undefined = undefined;
   // best-effort tab detection
   // yes this is overkill, but it avoids possibly annoying edge cases
   let lines = source.split(newline);
@@ -33,7 +34,7 @@ export function detectIndent (source: string, newline: string) {
     if (curIndent && (indent === undefined || curIndent.length < indent.length))
       indent = curIndent[0].slice(0, -1);
   }
-  lines = lines.map(line => line.slice(indent.length));
+  lines = lines.map(line => line.slice(indent!.length));
   let tabSpaces = lines.map(line => line.match(/^[ \t]*/)?.[0] || '') || [];
   let tabDifferenceFreqs = new Map<number, number>();
   let lastLength = 0;

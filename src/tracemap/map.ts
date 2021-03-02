@@ -1,9 +1,9 @@
-import { defaultStyle } from "../common/source-style.ts";
-import { baseUrl, isPlain } from "../common/url.ts";
-import * as json from "../common/json.ts";
-import { JspmError, throwInternalError } from "../common/err.ts";
-import { relativeUrl } from "../common/url.ts";
-import { alphabetize } from "../common/alphabetize.ts";
+import { defaultStyle } from "../common/source-style.js";
+import { baseUrl, isPlain } from "../common/url.js";
+import * as json from "../common/json.js";
+import { JspmError, throwInternalError } from "../common/err.js";
+import { relativeUrl } from "../common/url.js";
+import { alphabetize } from "../common/alphabetize.js";
 
 export interface IImportMap {
   baseUrl?: URL;

@@ -1,9 +1,9 @@
-import * as nest from './nest.land.ts';
+import * as nest from './nest.land.js';
 // import * as deno from './deno.land.ts';
-import * as jspm from './jspm.io.ts';
-import { PackageConfig, ExactPackage } from '../install/package.ts';
-import { Resolver } from '../install/resolver.ts';
-import { PackageTarget } from '../install/package.ts';
+import * as jspm from './jspm.io.js';
+import { PackageConfig, ExactPackage } from '../install/package.js';
+import { Resolver } from '../install/resolver.js';
+import { PackageTarget } from '../install/package.js';
 
 interface Provider {
   cdnUrl: string;
