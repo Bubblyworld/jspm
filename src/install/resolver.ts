@@ -145,6 +145,17 @@ export class Resolver {
     throw new JspmError(`Unable to resolve package ${target.registry}:${target.name} to "${target.ranges.join(' || ')}"${importedFrom(parentUrl)}`);
   }
 
+  async wasCommonJS (url: string): Promise<boolean> {
+    const pkgUrl = await this.getPackageBase(url);
+    if (!pkgUrl)
+      return false;
+    const pcfg = await this.getPackageConfig(pkgUrl);
+    if (!pcfg)
+      return false;
+    const subpath = './' + url.slice(pkgUrl.length);
+    return pcfg?.exports?.[subpath + '!cjs'] ? true : false;
+  }
+
   async resolveExports (pkgUrl: string, env: string[], subpathFilter?: string): Promise<Record<string, string>> {
     const pcfg = await this.getPackageConfig(pkgUrl) || {};
 

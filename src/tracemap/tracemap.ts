@@ -34,6 +34,7 @@ interface TraceEntry {
   hasStaticParent: boolean;
   size: number;
   integrity: string;
+  wasCJS: boolean;
   system: boolean;
   babel: boolean;
 }
@@ -280,10 +281,17 @@ export default class TraceMap {
   }
 
   private async traceUrl (resolvedUrl: string, parentUrl: URL, env: string[]): Promise<void> {
+    const wasCJS = await resolver.wasCommonJS(resolvedUrl);
+    if (wasCJS && env.includes('import'))
+      env = env.map(e => e === 'import' ? 'require' : e);
+    else if (!wasCJS && env.includes('require'))
+      env = env.map(e => e === 'require' ? 'import' : e);
+
     if (resolvedUrl in this.tracedUrls) return;
     if (resolvedUrl.endsWith('/'))
       throw new JspmError(`Trailing "/" installs not yet supported installing ${resolvedUrl} for ${parentUrl.href}`);
     const traceEntry: TraceEntry = this.tracedUrls[resolvedUrl] = {
+      wasCJS,
       deps: Object.create(null),
       dynamicDeps: Object.create(null),
       hasStaticParent: true,

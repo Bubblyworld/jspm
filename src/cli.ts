@@ -1,4 +1,3 @@
-import './deps.d.ts';
 import chalk from 'chalk';
 import { JspmError } from "./common/err.js";
 import { version } from "./version.js";

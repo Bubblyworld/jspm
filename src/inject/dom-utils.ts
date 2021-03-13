@@ -1,5 +1,3 @@
-// @ts-ignore
-import '../deps.d.ts';
 import MagicString from 'magic-string';
 import { ParsedTag } from './script-lexer.js';
 import { detectStyle } from '../common/source-style.js';
