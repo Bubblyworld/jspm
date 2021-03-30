@@ -4,7 +4,7 @@
     "noUnusedLocals": true,
     "typeRoots": ["node_modules/@types"],
     "module": "esnext",
-    "target": "es2020",
+    "target": "es2016",
     "noImplicitAny": false,
     "strictNullChecks": true,
     "sourceMap": true,
