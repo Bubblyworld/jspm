@@ -126,7 +126,7 @@ export default class TraceMap {
           this.installer!.newInstalls = false;
           await Promise.all([...this.traces].map(async trace => {
             const [specifier, parentUrl] = trace.split('##');
-            const resolved = await this.trace(specifier, new URL(parentUrl), this.tracedUrls?.[parentUrl]?.wasCJS ? ['import', ...this.env] : ['require', ...this.env]);
+            const resolved = await this.trace(specifier, new URL(parentUrl), this.tracedUrls?.[parentUrl]?.wasCJS ? ['require', ...this.env] : ['import', ...this.env]);
             traceResolutions[trace] = resolved;
           }));
         } while (this.installer!.newInstalls);
@@ -315,11 +315,11 @@ export default class TraceMap {
     }
     const resolvedUrlObj = new URL(resolvedUrl);
     await Promise.all(allDeps.map(async dep => {
-      const resolvedUrl = await this.trace(dep, resolvedUrlObj, env);
+      const resolved = await this.trace(dep, resolvedUrlObj, env);
       if (deps.includes(dep))
-        traceEntry.deps[dep] = resolvedUrl;
+        traceEntry.deps[dep] = resolved;
       if (dynamicDeps.includes(dep))
-        traceEntry.dynamicDeps[dep] = [resolvedUrl];
+        traceEntry.dynamicDeps[dep] = [resolved];
     }));
   }
 }
