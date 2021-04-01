@@ -15,15 +15,15 @@ if (typeof fetch !== 'undefined') {
 }
 else if (globalThis?.process?.versions?.node) {
   // @ts-ignore
-  const path = require('path');
+  const path = await import('path') as any;
   // @ts-ignore
-  const home = require('os').homedir();
+  const home = (await import('os')).homedir();
   // @ts-ignore
-  const process = require('process');
+  const process = await import('process');
   // @ts-ignore
-  const rimraf = require('rimraf');
+  const rimraf = await import('rimraf');
   // @ts-ignore
-  const makeFetchHappen = require('make-fetch-happen');
+  const { default: makeFetchHappen } = await import('make-fetch-happen');
   let cacheDir: string;
   if (process.platform === 'darwin')
     cacheDir = path.join(home, 'Library', 'Caches', 'jspm');

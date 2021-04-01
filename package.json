@@ -8,15 +8,17 @@
     "build": "npm run build-node && npm run build-api",
     "build-node": "ncc build -t src/node.js -e sver -s -e es-module-lexer",
     "watch-build-node": "ncc build -t src/node.js -s -e sver -e es-module-lexer -w --no-asset-builds",
-    "test": "jspm run test:script-lexer && jspm run test:dom && jspm run test:inject",
-    "test:inject": "jspm deno -x --no-check --allow-read --allow-net src/inject/map.ts",
-    "test:dom": "jspm deno -x --no-check --allow-read --allow-net src/inject/dom-utils.ts",
+    "test": "node test/test.js",
     "test:script-lexer": "jspm deno -x --no-check --allow-net src/inject/script-lexer.ts"
   },
   "exports": {
-    "publish": "./dist/index.js",
-    "default": "./src/cli.ts"
+    ".": {
+      "publish": "./dist/index.js",
+      "default": "./src/cli.ts"
+    },
+    "./tracemap": "./dist/api/tracemap.js"
   },
+  "type": "module",
   "bin": {
     "jspm": "dist/index.js"
   },
@@ -37,6 +39,7 @@
     "make-fetch-happen": "^8.0.3",
     "ora": "^5.1.0",
     "rimraf": "^3.0.2",
+    "rollup": "^2.44.0",
     "typescript": "^4.1.3"
   },
   "files": [
