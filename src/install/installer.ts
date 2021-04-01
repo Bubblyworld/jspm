@@ -71,8 +71,9 @@ export class Installer {
     this.installBaseUrl = baseUrl.href;
     this.opts = opts;
     this.lockfilePath = fileURLToPath(this.installBaseUrl + 'jspm.lock');
-    const { resolutions, exists: hasLock } = lock.loadVersionLock(this.lockfilePath);
-    this.hasLock = hasLock;
+    let resolutions: lock.LockResolutions = {};
+    if (opts.lock)
+      ({ resolutions, exists: this.hasLock } = lock.loadVersionLock(this.lockfilePath));
 
     this.installs = resolutions;
 

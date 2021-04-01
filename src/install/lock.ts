@@ -17,14 +17,14 @@ export interface LockResolutions {
 
 export function getResolution (resolutions: LockResolutions, name: string, pkgUrl: string): string | undefined {
   if (!pkgUrl.endsWith('/'))
-    throwInternalError();
+    throwInternalError(pkgUrl);
   resolutions[pkgUrl] = resolutions[pkgUrl] || {};
   return resolutions[pkgUrl][name];
 }
 
 export function setResolution (resolutions: LockResolutions, name: string, pkgUrl: string, resolution: string) {
   if (!pkgUrl.endsWith('/'))
-    throwInternalError();
+    throwInternalError(pkgUrl);
   resolutions[pkgUrl] = resolutions[pkgUrl] || {};
   resolutions[pkgUrl][name] = resolution;
 }

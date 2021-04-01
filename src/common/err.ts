@@ -7,6 +7,6 @@ export class JspmError extends Error {
   }
 }
 
-export function throwInternalError (): never {
-  throw new Error('Internal Error');
+export function throwInternalError (...args): never {
+  throw new Error('Internal Error' + (args.length ? ' ' + args.join(', ') : ''));
 }

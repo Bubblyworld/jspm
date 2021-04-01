@@ -1,0 +1,7 @@
+{
+  "exports": "./main.js",
+  "type": "module",
+  "dependencies": {
+    "react": "^16"
+  }
+}
