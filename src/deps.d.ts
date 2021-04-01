@@ -27,7 +27,7 @@ declare module 'path' {
   export default path;
 }
 
-declare module 'sver/convert-range' {
+declare module 'sver/convert-range.js' {
   // @ts-ignore
   import { SemverRange } from 'https://ga.jspm.io/npm:sver@1.8.3/sver.js';
   export default function convertRange (range: string): typeof SemverRange;
