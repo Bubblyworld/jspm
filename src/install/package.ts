@@ -2,7 +2,7 @@ import { JspmError } from "../common/err.js";
 import { baseUrl, isRelative } from "../common/url.js";
 // @ts-ignore
 import sver from 'sver';
-import convertRange from 'sver/convert-range';
+import convertRange from 'sver/convert-range.js';
 import { InstallTarget } from "./installer.js";
 import resolver from "./resolver.js";
 import { urlToNiceStr } from "../common/url.js";
