@@ -1,13 +1,16 @@
 import { Generator } from '@jspm/generator';
-import { parse } from "https://deno.land/std@0.119.0/flags/mod.ts";
+import { parse } from 'https://deno.land/std@0.119.0/flags/mod.ts';
+import { version } from './version.js';
 
 const flags = parse(Deno.args, {
   alias: {
     'o': 'output',
-    'e': 'env'
+    'e': 'env',
+    'm': 'map',
+    'r': 'resolution'
   },
   boolean: ['force', 'stdout'],
-  string: ['map', 'env', 'output'],
+  string: ['map', 'env', 'output', 'resolution'],
   default: {
     force: false
   },
@@ -28,6 +31,10 @@ async function getInputMap (flags) {
   return JSON.parse(inMap);
 }
 
+function getOutputFile (flags) {
+  
+}
+
 async function writeMap (map, flags, defaultStdout = false) {
   const output = JSON.stringify(map, null, 2);
   if (!flags.output && (defaultStdout || flags.stdout)) {
@@ -35,21 +42,41 @@ async function writeMap (map, flags, defaultStdout = false) {
   }
   else {
     const outfile = flags.output || flags.map || 'importmap.json';
-    if (outfile.endsWith('.html'))
+    if (!outfile.endsWith('.json')) {
       throw new Error('ABSOLUTELY NECESSARY TODO: HTML OUTPUT');
+    }
     await Deno.writeTextFile(outfile, output);
     console.error(`%cOK: %cUpdated %c${outfile}`, 'color: green', 'color: black', 'font-weight: bold');
   }
 }
 
-function getEnv (flags) {
-  const env = ['development', 'deno', 'node', 'module'];
+class JspmError extends Error {
+  jspmError = true;
+}
+
+function getResolutions (flags) {
+  if (!flags.resolution) return;
+  const resolutions = Array.isArray(flags.resolution) ? flags.resolution : [flags.resolution];
+  return Object.fromEntries(resolutions.map(resolution => {
+    if (resolution.indexOf('=') === -1)
+      throw new JspmError('Resolutions must be mappings from aliases to targets, for example of the form "--resolution pkg=x.y.z"');
+    return resolution.split('=');
+  }));
+}
+
+function getEnv (flags, browser) {
+  const env = ['development', 'deno', 'node'];
   const envFlags = Array.isArray(flags.env) ? flags.env : (flags.env || '').split(',').map(e => e.trim());
+  if (browser && !envFlags.includes('browser') && !envFlags.includes('no-browser'))
+    envFlags.push('browser');
+  if (envFlags.includes('browser') && !envFlags.includes('no-module'))
+    envFlags.push('module')
   for (const name of envFlags) {
     switch (name) {
-      case 'nodeno':
-      case 'nomodule':
-      case 'nonode':
+      case 'no-deno':
+      case 'no-module':
+      case 'no-node':
+      case 'no-browser':
         env.splice(env.indexOf(name.slice(2)), 1);
         break;
       case 'browser':
@@ -78,21 +105,35 @@ function getEnv (flags) {
 
 try {
   switch (cmd) {
-    case 'checkout':
-      throw new Error('Absolutely necessary TODO');
-    case 'pin':
-      throw new Error('Custom pins absolutely necessary TODO');
     case 'install': {
-      const args = flags._.slice(1);
+      const args = flags._.slice(1).map(arg => {
+        if (arg.indexOf('=') === -1)
+          return arg;
+        const [alias, target] = arg.split('=');
+        return { alias, target };
+      });
       const generator = new Generator({
         inputMap: await getInputMap(flags),
-        env: getEnv(flags)
+        env: getEnv(flags),
+        resolutions: getResolutions(flags),
       });
-      console.error(`Installing ${args.join(', ')}...`);
+      console.error(`Installing${args.length ? ' ' + args.map(x => typeof x === 'string' ? x : x.alias).join(', ') : ''}...`);
       if (args.length)
         await generator.install(args);
       else
         await generator.reinstall();
+      await writeMap(generator.getMap(), flags);
+      break;
+    }
+    case 'update': {
+      const args = flags._.slice(1);
+      const generator = new Generator({
+        inputMap: await getInputMap(flags),
+        env: getEnv(flags),
+        resolutions: getResolutions(flags)
+      });
+      console.error(`Updating${args.length ? ' ' + args.join(', ') : ''}...`);
+      await generator.update(args);
       await writeMap(generator.getMap(), flags);
       break;
     }
@@ -105,13 +146,27 @@ try {
       console.error(`Uninstalling ${args.join(', ')}...`);
       await generator.uninstall(args);
       await writeMap(generator.getMap(), flags);
-      break; 
+      break;
+    }
+    case 'inject': {
+      const args = flags._.slice(1);
+      const generator = new Generator({
+        inputMap: await getInputMap(flags),
+        // HTML injection implies browser
+        env: getEnv(flags, true),
+        resolutions: getResolutions(flags)
+      });
+      console.error(`Injecting ${args.join(', ')}...`);
+      const { map } = await generator.extractMap(args);
+      await writeMap(map, flags, true);
+      break;
     }
     case 'pluck': {
       const args = flags._.slice(1);
       const generator = new Generator({
         inputMap: await getInputMap(flags),
-        env: getEnv(flags)
+        env: getEnv(flags),
+        resolutions: getResolutions(flags)
       });
       console.error(`Plucking ${args.join(', ')}...`);
       const { map } = await generator.extractMap(args);
@@ -119,7 +174,7 @@ try {
       break;
     }
     case undefined:
-      console.error('JSPM@2.0');
+      console.error(`JSPM@${version}`);
       break;
     default:
       throw new Error(`Unknown command ${flags._}.`);

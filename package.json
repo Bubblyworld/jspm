@@ -1,6 +1,5 @@
 {
   "devDependencies": {
-    "@jspm/generator": "^1.0.0-beta.33",
-    "mkdirp": "^1.0.4"
+    "@jspm/generator": "^1.0.0-beta.35"
   }
 }
