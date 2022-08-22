@@ -14,12 +14,12 @@ deps = ['dist/jspm.exe']
 
 [[task]]
 target = 'appmap.json'
-run = 'deno run --unstable -A src/jspm.js install -m appmap.json'
+run = 'deno run --unstable -A src/jspm.js install -m appmap.json -e source'
 
 [[task]]
 target = 'dist/jspm.exe'
-deps = ['src/jspm.js', 'package.json', 'src/appmap.json']
-run = 'deno compile -o dist/jspm.exe --unstable -A --importmap src/appmap.json --no-check src/jspm.js'
+deps = ['src/jspm.js', 'package.json', 'appmap.json']
+run = 'deno compile -o dist/jspm.exe --unstable -A --importmap appmap.json --no-check src/jspm.js'
 
 [[task]]
 name = 'test'

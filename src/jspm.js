@@ -9,7 +9,7 @@ const flags = parse(Deno.args, {
     'm': 'map',
     'r': 'resolution'
   },
-  boolean: ['force', 'stdout'],
+  boolean: ['force', 'stdout', 'preload', 'integrity', 'compact'],
   string: ['map', 'env', 'output', 'resolution'],
   default: {
     force: false
@@ -42,8 +42,8 @@ async function writeMap (map, flags, defaultStdout = false) {
   }
   else {
     const outfile = flags.output || flags.map || 'importmap.json';
-    if (!outfile.endsWith('.json')) {
-      throw new Error('ABSOLUTELY NECESSARY TODO: HTML OUTPUT');
+    if (!outfile.endsWith('.json') && !outfile.endsWith('.importmap')) {
+      throw new JspmError(`Extract will only write to ".json" or ".importmap" files. Use "jspm inject" for HTML injection.`);
     }
     await Deno.writeTextFile(outfile, output);
     console.error(`%cOK: %cUpdated %c${outfile}`, 'color: green', 'color: black', 'font-weight: bold');
@@ -105,6 +105,7 @@ function getEnv (flags, browser) {
 
 try {
   switch (cmd) {
+    case 'i':
     case 'install': {
       const args = flags._.slice(1).map(arg => {
         if (arg.indexOf('=') === -1)
@@ -148,6 +149,21 @@ try {
       await writeMap(generator.getMap(), flags);
       break;
     }
+    case 'ti':
+    case 'trace-install': {
+      const args = flags._.slice(1);
+      const generator = new Generator({
+        inputMap: await getInputMap(flags),
+        env: getEnv(flags),
+        resolutions: getResolutions(flags),
+      });
+      console.error(`Tracing${args.length ? ' ' + args.map(x => typeof x === 'string' ? x : x.alias).join(', ') : ''}...`);
+      if (!args.length)
+        throw new JspmError(`Trace install requires at least one module to trace.`);
+      await generator.traceInstall(args);
+      await writeMap(generator.getMap(), flags);
+      break;
+    }
     case 'inject': {
       const args = flags._.slice(1);
       const generator = new Generator({
@@ -156,19 +172,39 @@ try {
         env: getEnv(flags, true),
         resolutions: getResolutions(flags)
       });
-      console.error(`Injecting ${args.join(', ')}...`);
-      const { map } = await generator.extractMap(args);
-      await writeMap(map, flags, true);
+
+      if (args.length === 0)
+        throw new JspmError('Inject requires an HTML file to inject into.');
+
+      const htmlFile = args[args.length - 1];
+      const modules = args.slice(0, -1);
+      const trace = modules.length === 0;
+      console.error(`Injecting ${modules.length ? modules.join(', ') + ' ' : ''}into ${htmlFile}...`);
+
+      const html = await Deno.readTextFile(htmlFile);
+
+      const output = await generator.htmlInject(html, {
+        pins: modules,
+        trace,
+        htmlUrl: new URL(args[0], 'file:///' + Deno.cwd().replace(/\\/g, '/')).href,
+        comment: false,
+        preload: flags.preload,
+        integrity: flags.integrity,
+        whitespace: !flags.compact,
+      });
+
+      await Deno.writeTextFile(htmlFile, output);
       break;
     }
-    case 'pluck': {
+    case 'e':
+    case 'extract': {
       const args = flags._.slice(1);
       const generator = new Generator({
         inputMap: await getInputMap(flags),
         env: getEnv(flags),
         resolutions: getResolutions(flags)
       });
-      console.error(`Plucking ${args.join(', ')}...`);
+      console.error(`Extracting ${args.join(', ')}...`);
       const { map } = await generator.extractMap(args);
       await writeMap(map, flags, true);
       break;
