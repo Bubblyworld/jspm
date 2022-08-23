@@ -6,6 +6,7 @@ BIN_PATH = '~/bin/'
 
 [[task]]
 name = 'install'
+dep = 'dist/jspm.exe'
 run = 'cp dist/jspm.exe ${{ BIN_PATH }}/jspm.exe'
 
 [[task]]
@@ -14,7 +15,7 @@ deps = ['dist/jspm.exe']
 
 [[task]]
 target = 'appmap.json'
-run = 'deno run --unstable -A src/jspm.js install -m appmap.json -e source'
+run = 'deno run --unstable -A --importmap appmap.json src/jspm.js install -m appmap.json -e source'
 
 [[task]]
 target = 'dist/jspm.exe'
