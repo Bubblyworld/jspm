@@ -96,7 +96,7 @@ export function getEnv(flags: Flags, log: boolean, inputMap: IImportMapFile) {
   env = addEnvs(env, envFlags.filter(env => !env.startsWith('no-')));
 
   if (log)
-    console.error(`Environments: ${JSON.stringify(removeImportFlag(env))}`)
+    console.error(`Environments: ${removeImportFlag(env).join(', ')}`)
 
   return env;
 }
