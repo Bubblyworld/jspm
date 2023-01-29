@@ -26,18 +26,18 @@ Since the application has the fresh server dependency, it is possible to create
 the application's server code in an entry file called `main.ts`:
 
 ```ts
-import { start } from "fresh/server.ts";
-import * as $0 from "./routes/index.tsx";
+import { start } from 'fresh/server.ts'
+import * as $0 from './routes/index.tsx'
 
 const manifest = {
   routes: {
-    "./routes/index.tsx": $0,
+    './routes/index.tsx': $0,
   },
   islands: {},
   baseUrl: import.meta.url,
 }
 
-await start(manifest);
+await start(manifest)
 ```
 
 It is possible to skip the `islands` config and only focus on a minimal Fresh
@@ -49,7 +49,7 @@ In this case, a simple `/` route should be created with any
 content as a `./routes/index.tsx` file, for instance:
 
 ```tsx
-import { Head } from "fresh/runtime.ts";
+import { Head } from 'fresh/runtime.ts'
 
 export default function Home() {
   return (
@@ -63,7 +63,7 @@ export default function Home() {
         </p>
       </div>
     </>
-  );
+  )
 }
 ```
 This file needs two new dependencies, `fresh/runtime.ts` for the `Head`

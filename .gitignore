@@ -2,5 +2,5 @@
 /package-lock.json
 /dist
 /sandbox
-/deno.lock
+deno.lock
 /importmap.json
