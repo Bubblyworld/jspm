@@ -94,8 +94,7 @@ which would result in such an importmap:
 }
 ```
 
-Now the application needs a `deno.json` file to run the entry file, which can
-something like:
+Now the application needs a `deno.json` file to run the entry file, which can be something like:
 ```json
 {
   "tasks": {
@@ -153,5 +152,7 @@ export default function Home(props) {
 ```
 In this case, the application will log `{ cli: "jspm" }` on requests to `http://localhost:8000/?cli=jspm`
 
+## Aliasing
+If `react`
 
 
