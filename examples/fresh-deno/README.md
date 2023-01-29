@@ -151,8 +151,3 @@ export default function Home(props) {
 }
 ```
 In this case, the application will log `{ cli: "jspm" }` on requests to `http://localhost:8000/?cli=jspm`
-
-## Aliasing
-If `react`
-
-
