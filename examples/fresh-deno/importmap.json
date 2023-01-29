@@ -1,0 +1,19 @@
+{
+  "env": [
+    "deno",
+    "development",
+    "module"
+  ],
+  "imports": {
+    "fresh/runtime.ts": "https://deno.land/x/fresh@1.1.2/runtime.ts",
+    "fresh/server.ts": "https://deno.land/x/fresh@1.1.2/server.ts",
+    "preact": "https://ga.jspm.io/npm:preact@10.11.3/dist/preact.mjs",
+    "preact/jsx-runtime": "https://ga.jspm.io/npm:preact@10.11.3/jsx-runtime/dist/jsxRuntime.mjs"
+  },
+  "scopes": {
+    "https://deno.land/": {
+      "preact-render-to-string": "https://ga.jspm.io/npm:preact-render-to-string@5.2.6/dist/index.mjs",
+      "preact/hooks": "https://ga.jspm.io/npm:preact@10.11.3/hooks/dist/hooks.mjs"
+    }
+  }
+}
