@@ -1,6 +1,9 @@
+import qs from 'qs'
 import { Head } from 'fresh/runtime.ts'
 
-export default function Home() {
+export default function Home(props) {
+  console.log(qs.parse(props.url.search.slice(1)))
+
   return (
     <>
       <Head>

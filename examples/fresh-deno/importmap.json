@@ -8,12 +8,24 @@
     "fresh/runtime.ts": "https://deno.land/x/fresh@1.1.2/runtime.ts",
     "fresh/server.ts": "https://deno.land/x/fresh@1.1.2/server.ts",
     "preact": "https://ga.jspm.io/npm:preact@10.11.3/dist/preact.mjs",
-    "preact/jsx-runtime": "https://ga.jspm.io/npm:preact@10.11.3/jsx-runtime/dist/jsxRuntime.mjs"
+    "preact/jsx-runtime": "https://ga.jspm.io/npm:preact@10.11.3/jsx-runtime/dist/jsxRuntime.mjs",
+    "qs": "https://ga.jspm.io/npm:qs@6.11.0/lib/index.js"
   },
   "scopes": {
     "https://deno.land/": {
       "preact-render-to-string": "https://ga.jspm.io/npm:preact-render-to-string@5.2.6/dist/index.mjs",
       "preact/hooks": "https://ga.jspm.io/npm:preact@10.11.3/hooks/dist/hooks.mjs"
+    },
+    "https://ga.jspm.io/": {
+      "#util.inspect.js": "https://ga.jspm.io/npm:object-inspect@1.12.3/util.inspect.js",
+      "call-bind/callBound": "https://ga.jspm.io/npm:call-bind@1.0.2/callBound.js",
+      "function-bind": "https://ga.jspm.io/npm:function-bind@1.1.1/index.js",
+      "get-intrinsic": "https://ga.jspm.io/npm:get-intrinsic@1.2.0/index.js",
+      "has": "https://ga.jspm.io/npm:has@1.0.3/src/index.js",
+      "has-symbols": "https://ga.jspm.io/npm:has-symbols@1.0.3/index.js",
+      "object-inspect": "https://ga.jspm.io/npm:object-inspect@1.12.3/index.js",
+      "side-channel": "https://ga.jspm.io/npm:side-channel@1.0.4/index.js",
+      "util": "https://deno.land/std@0.175.0/node/util.ts"
     }
   }
 }

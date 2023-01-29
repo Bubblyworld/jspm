@@ -112,12 +112,12 @@ The `importMap` is a critical key and it should be specified, otherwise the appl
 work at all.
 
 ## Running
-Using `deno task` the application is runnable.
+
 ```sh
 deno task start
 ```
 
-And a user can navigate to the `http://localhost:8000` link.
+Using this command, deno would start the server, and then a user can navigate to the `http://localhost:8000` link.
 
 ## Node packages
 JSPM is able to bring most of the Nodejs packages to environments like the Browser
@@ -128,7 +128,30 @@ using:
 ```sh
 jspm install qs
 ```
+Then `qs` could parse the application requests. In `routes/index.ts`:
 
+```diff
++ import qs from 'qs'
+import { Head } from 'fresh/runtime.ts'
+
+export default function Home(props) {
++  console.log(qs.parse(props.url.search.slice(1)))
+
+  return (
+    <>
+      <Head>
+        <title>Fresh App Using JSPM</title>
+      </Head>
+      <div>
+        <p>
+          This is a Fresh app built using JSPM.
+        </p>
+      </div>
+    </>
+  )
+}
+```
+In this case, the application will log `{ cli: "jspm" }` on requests to `http://localhost:8000/?cli=jspm`
 
 
 
