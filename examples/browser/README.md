@@ -60,7 +60,7 @@ feature called **Linking** or **Tracing**. Which by passing a list of modules,
 the CLI will install all the required dependencies of those modules
 automatically.
 ```sh
-jspm link index.js
+jspm link ./index.js
 ```
 This will transform our empty importmap into this one:
 ```json
