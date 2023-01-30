@@ -37,13 +37,13 @@ The goal of this section is to write a React application that renders a "Hello,
 JSPM" text into the page. It's possible to achieve that, in single file called
 `index.js`:
 ```js
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React from 'react'
+import ReactDOM from 'react-dom'
 
 ReactDOM.render(
-	React.createElement('div', null, 'Hello, JSPM'),
-	document.getElementById('root')
-);
+  React.createElement('div', null, 'Hello, JSPM'),
+  document.getElementById('root')
+)
 ```
 And the `index.html` file should be changed to have a `#root` element and a
 script tag that loads the `index.js` file.
