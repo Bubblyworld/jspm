@@ -33,8 +33,8 @@ instead of an empty one, which is the main use case of the `inject` command.
 
 ## Entry
 The goal of this section is to write a React application that renders a "Hello,
-JSPM" text into the page. It's possible to achieve that, in single file called
-`index.js`:
+JSPM" text into the page. It's possible to achieve that, in a single file called
+`index.js` with this content:
 ```js
 import React from 'react'
 import ReactDOM from 'react-dom'
