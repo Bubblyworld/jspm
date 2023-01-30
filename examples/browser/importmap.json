@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "index.js": "https://ga.jspm.io/npm:index.js@0.0.3/index.js"
+  },
+  "scopes": {
+    "https://ga.jspm.io/": {
+      "fs": "https://ga.jspm.io/npm:@jspm/core@2.0.0/nodelibs/browser/fs.js",
+      "path": "https://ga.jspm.io/npm:@jspm/core@2.0.0/nodelibs/browser/path.js"
+    }
+  }
+}
