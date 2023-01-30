@@ -1,17 +1,16 @@
 # Browser
 The default environment for the CLI is the browser, which allows the users to
-treat JSPM as a modern importmap package manager that is capable of most of the
-features modern package managers bring.
+treat JSPM as a modern importmap package manager.
 
 ## Initialization
 
-If there's no html file in the directory, it is possible to create a default template html file with an
+If there's no HTML file in the directory, it is possible to create a HTML file with an
 empty importmap using the `inject` command.
 
 ```sh
 jspm inject index.html
 ```
-which results in this html file:
+which results in this content:
 
 ```html
 <!DOCTYPE html>
@@ -77,7 +76,7 @@ This will transform our empty importmap into this one:
   }
 }
 ```
-And then by running `jspm inject index.html`, the index.html will receive the
+And then by running `jspm inject index.html`, the `index.html` will receive the
 new importmap.
 
 > The `inject` command does the linking by default, so by running only this command, the `index.html` file would also receive the new dependencies.
