@@ -25,8 +25,9 @@ CLI is going to remember this environment for future operations and commands.
 ## Entry
 
 Since the application has the fresh server dependency, it is possible to create
-the application's server code in an entry file called `main.ts`:
+the application's server code in an entry file called `main.ts`.
 
+`main.ts`:
 ```ts
 import { start } from 'fresh/server.ts'
 import * as $0 from './routes/index.tsx'
@@ -48,8 +49,9 @@ application setup with a `/` route.
 ## Routes
 
 In this case, a simple `/` route should be created with any
-content as a `./routes/index.tsx` file, for instance:
+content as a `./routes/index.tsx` file.
 
+`./routes/index.tsx`:
 ```tsx
 import { Head } from 'fresh/runtime.ts'
 
@@ -76,6 +78,8 @@ $ jspm install denoland:fresh/runtime.ts preact/jsx-runtime
 Ok: Updated importmap.json
 ```
 which would result in such an importmap:
+
+`importmap.json`:
 ```json
 {
   "env": [
@@ -98,7 +102,9 @@ which would result in such an importmap:
 }
 ```
 
-Now the application needs a `deno.json` file to run the entry file, which can be something like:
+Now the application needs a `deno.json` file to run the entry file.
+
+`deno.json`:
 ```json
 {
   "tasks": {
@@ -142,8 +148,9 @@ $ jspm install qs
 
 Ok: Updated importmap.json
 ```
-Then `qs` could parse the application requests. In `routes/index.ts`:
+Then `qs` could parse the application requests.
 
+`routes/index.ts`:
 ```diff
 + import qs from 'qs'
 import { Head } from 'fresh/runtime.ts'
