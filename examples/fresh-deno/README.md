@@ -12,8 +12,10 @@ cd fresh-deno
 
 And then with the CLI, a new import map gets created to be the main importmap
 for our Deno application. As an initial dependency, the application needs the `fresh/server.ts` code to run the server.
-```
-jspm install denoland:fresh/server.ts --env=deno
+```sh
+$ jspm install denoland:fresh/server.ts --env=deno
+
+Ok: Updated importmap.json
 ```
 This command will add
 [`fresh/server.ts`](https://deno.land/x/fresh@1.1.2/server.ts) to the importmap,
@@ -69,7 +71,9 @@ export default function Home() {
 This file needs two new dependencies, `fresh/runtime.ts` for the `Head`
 component and `preact/jsx-runtime` for the JSX support.
 ```
-jspm install denoland:fresh/runtime.ts preact/jsx-runtime
+$ jspm install denoland:fresh/runtime.ts preact/jsx-runtime
+
+Ok: Updated importmap.json
 ```
 which would result in such an importmap:
 ```json
@@ -113,7 +117,16 @@ work at all.
 ## Running
 
 ```sh
-deno task start
+$ deno task start
+
+Import map diagnostics:
+  - Invalid top-level key "env". Only "imports" and
+ "scopes" can be present.
+Task start deno run -A main.ts
+Import map diagnostics:
+  - Invalid top-level key "env". Only "imports" and
+ "scopes" can be present.
+Listening on http://localhost:8000/
 ```
 
 Using this command, deno would start the server, and then a user can navigate to the `http://localhost:8000` link.
@@ -125,7 +138,9 @@ One of the most popular packages in npm for nodejs is `qs` which is a
 light-weight querystring parser. JSPM can install this package in deno easily
 using:
 ```sh
-jspm install qs
+$ jspm install qs
+
+Ok: Updated importmap.json
 ```
 Then `qs` could parse the application requests. In `routes/index.ts`:
 
