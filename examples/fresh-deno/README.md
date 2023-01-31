@@ -1,6 +1,8 @@
 # Deno & Fresh
 Using the CLI, it's possible to quickly and painlessly spin up a Deno web
 application in the Fresh framework with minimal setup.
+In this workflow tutorial, a small fresh deno server gets created using JSPM
+powered importmaps and also running client code with the same importmap.
 
 First a directory should be created for initialization with any preferable name:
 
