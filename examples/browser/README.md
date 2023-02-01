@@ -1,40 +1,26 @@
 # Browser
 The default environment for the CLI is the browser, which allows the users to
 treat JSPM as a modern importmap package manager.
+In this workflow, the users go through the integration of an existing `index.html`
+file and a javascript file that has a React app.
 
 ## Initialization
 
-If there's no HTML file in the directory, it is possible to create a HTML file with an
-empty importmap using the `inject` command.
-
-```sh
-jspm inject index.html
-```
-which results in this content:
-
+`index.html`:
 ```html
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
     <title>JSPM example</title>
-    <script async src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js" crossorigin="anonymous"></script>
-<script type="importmap">
-{}
-</script>
   </head>
   <body>
+    <div id="root"></div>
+    <script src="./index.js" type="module"></script>
   </body>
 </html>
 ```
-If there was an importmap already (`importmap.json` or an importmap provided by
-the `--map` option flag), then the script tag would have the provided importmap
-instead of an empty one, which is the main use case of the `inject` command.
-
-## Entry
-The goal of this section is to write a React application that renders a "Hello,
-JSPM" text into the page. It's possible to achieve that, in a single file called
-`index.js` with this content:
+And the `index.js` is a simple React file with no JSX.
 ```js
 import React from 'react'
 import ReactDOM from 'react-dom'
@@ -44,42 +30,50 @@ ReactDOM.render(
   document.getElementById('root')
 )
 ```
-And the `index.html` file should be changed to have a `#root` element and a
-script tag that loads the `index.js` file.
-```diff
-  <body>
-+    <div id="root"></div>
-+    <script src="./index.js" type="module"></script>
-  </body>
-```
 
 ## Linking (Tracing)
 
-Since the importmap has none of those React dependencies, the CLI provides a
+Since there is no importmap that has any of these React dependencies, the CLI provides a
 feature called **Linking** or **Tracing**. Which by passing a list of modules,
 the CLI will install all the required dependencies of those modules
 automatically.
+The purpose of this feature can be achieved using the `inject` or `link`
+command, which in case of html files, the former one is simpler.
 ```sh
-jspm link ./index.js
+jspm inject index.html
 ```
-This will transform our empty importmap into this one:
-```json
-{
-  "imports": {
-    "react": "https://ga.jspm.io/npm:react@18.2.0/dev.index.js",
-    "react-dom": "https://ga.jspm.io/npm:react-dom@18.2.0/dev.index.js"
-  },
-  "scopes": {
-    "https://ga.jspm.io/": {
-      "scheduler": "https://ga.jspm.io/npm:scheduler@0.23.0/dev.index.js"
-    }
-  }
-}
-```
-And then by running `jspm inject index.html`, the `index.html` will receive the
-new importmap.
+This will inject a new importmap into our `index.html` using the trace feature:
 
-> The `inject` command does the linking by default, so by running only this command, the `index.html` file would also receive the new dependencies.
+`index.html`:
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>JSPM example</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script async src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js" crossorigin="anonymous"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://ga.jspm.io/npm:react@18.2.0/dev.index.js",
+        "react-dom": "https://ga.jspm.io/npm:react-dom@18.2.0/dev.index.js"
+      },
+      "scopes": {
+        "https://ga.jspm.io/": {
+          "scheduler": "https://ga.jspm.io/npm:scheduler@0.23.0/dev.index.js"
+        }
+      }
+    }
+    </script>
+    <script src="./index.js" type="module"></script>
+  </body>
+</html>
+```
+And now the application has those dependencies through JSPM, and it can run in
+the server using the importmap.
 
 ## Running
 
@@ -88,4 +82,33 @@ Now by executing this command, this tiny react application would be available on
 
 ```sh
 npx http-server ./
+```
+
+## Production
+
+In the importmap, it can be seen that the React dependencies end with
+`/dev.index.js` expression, which shows that those dependencies are in the
+development mode. It can be easily switched using the `--env` flag in the CLI.
+```sh
+jspm inject index.html --env=production
+```
+
+And now the dependencies get the production mode instead of the development
+mode.
+
+`index.html`:
+```html
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://ga.jspm.io/npm:react@18.2.0/index.js",
+        "react-dom": "https://ga.jspm.io/npm:react-dom@18.2.0/index.js"
+      },
+      "scopes": {
+        "https://ga.jspm.io/": {
+          "scheduler": "https://ga.jspm.io/npm:scheduler@0.23.0/index.js"
+        }
+      }
+    }
+    </script>
 ```
