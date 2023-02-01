@@ -97,18 +97,29 @@ And now the dependencies get the production mode instead of the development
 mode.
 
 `index.html`:
-```html
+```diff
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://ga.jspm.io/npm:react@18.2.0/index.js",
-        "react-dom": "https://ga.jspm.io/npm:react-dom@18.2.0/index.js"
-      },
-      "scopes": {
-        "https://ga.jspm.io/": {
-          "scheduler": "https://ga.jspm.io/npm:scheduler@0.23.0/index.js"
-        }
-      }
-    }
+-    {
+-      "imports": {
+-        "react": "https://ga.jspm.io/npm:react@18.2.0/dev.index.js",
+-        "react-dom": "https://ga.jspm.io/npm:react-dom@18.2.0/dev.index.js"
+-      },
+-      "scopes": {
+-        "https://ga.jspm.io/": {
+-          "scheduler": "https://ga.jspm.io/npm:scheduler@0.23.0/dev.index.js"
+-        }
+-      }
+-    }
++    {
++      "imports": {
++        "react": "https://ga.jspm.io/npm:react@18.2.0/index.js",
++        "react-dom": "https://ga.jspm.io/npm:react-dom@18.2.0/index.js"
++      },
++      "scopes": {
++        "https://ga.jspm.io/": {
++          "scheduler": "https://ga.jspm.io/npm:scheduler@0.23.0/index.js"
++        }
++      }
++    }
     </script>
 ```
