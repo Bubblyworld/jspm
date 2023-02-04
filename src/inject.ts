@@ -5,7 +5,6 @@ import { Generator } from '@jspm/generator'
 import type { InjectFlags } from './types'
 import {
   JspmError,
-  cwdUrl,
   getEnv,
   getInputMap,
   getInputMapUrl,
