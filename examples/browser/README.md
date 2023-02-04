@@ -1,7 +1,7 @@
 # Browser
 The default environment for the CLI is the browser, which allows the users to
 treat JSPM as a modern importmap package manager.
-In this workflow, the users go through the integration of an existing `index.html`
+In this workflow, the users go through the CLI integration of an existing `index.html`
 file and a javascript file that has a React app.
 
 ## Initialization
