@@ -5,8 +5,6 @@ import c from 'picocolors'
 import ora from 'ora'
 import type { Flags, IImportMap, IImportMapFile } from './types'
 
-export const cwdUrl = pathToFileURL(`${process.cwd()}/`)
-
 export class JspmError extends Error {
   jspmError = true
 }
