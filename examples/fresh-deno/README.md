@@ -301,12 +301,12 @@ environment variable value might be changed and following that, the importmap
 would be altered. On the first run, this might be slow, but since JSPM uses
 fetch cache, the next attempts would not take any time.
 
-In the handler, the app converts the html value from the response and then
+In the handler, the app receives the html value from the response and then
 converts it to a string so it'd be passed to the `htmlInject` function in
-generator. And then it returns a new response with the injected html.
+the generator. And then it returns a new response with the injected html.
 
 In the script module, the `qs` module is loaded using the injected browser
-importmap and with the `parse` function, the parsed query string gets logged.
+importmap, and then with the `parse` function, the parsed query string gets logged.
 
 ```sh
 $ deno task start
@@ -321,7 +321,7 @@ Import map diagnostics:
 Listening on http://localhost:8000/
 ```
 And by navigating to `http://localhost:8000/?cli=jspm`, and checking the logs in
-the browser and server, and this log should be seen both in the browser and the
+the browser and server, and this log should be seen in the browser and the
 server.
 
 ```

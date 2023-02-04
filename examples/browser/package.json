@@ -1,0 +1,9 @@
+{
+  "name": "react-app",
+  "import": {
+    "#main": {
+      "development": "index.js",
+      "production": "index.prod.js"
+    }
+  }
+}
