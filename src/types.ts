@@ -11,6 +11,7 @@ export interface Flags {
   preload?: boolean
   integrity?: boolean
   compact?: boolean
+  cache?: 'offline' | boolean;
 }
 
 export type InjectFlags = Flags & {

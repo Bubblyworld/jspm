@@ -19,6 +19,7 @@ export default async function install(packages: string[], flags: Flags) {
     env: [...env],
     inputMap,
     defaultProvider: provider,
+    cache: flags.cache,
     baseUrl: cwdUrl,
     mapUrl: getInputMapUrl(flags),
     resolutions: getResolutions(flags),

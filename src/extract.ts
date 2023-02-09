@@ -12,6 +12,7 @@ export default async function extract(packages: string[], flags: Flags) {
     env,
     inputMap,
     baseUrl: cwdUrl,
+    cache: flags.cache,
     mapUrl: getInputMapUrl(flags),
     resolutions: getResolutions(flags),
   })

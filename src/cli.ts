@@ -19,6 +19,7 @@ cli
   .option('-e, --env <environments>', 'the conditional environment resolutions to apply')
   .option('-m, --map <map>', 'an authoritative initial import map', { default: 'importmap.json' })
   .option('-p, --provider <proider>', 'the default provider to use for a new install, defaults to `jspm`', { default: 'jspm' })
+  .option('--cache [mode]', 'the default provider to use for a new install, defaults to `jspm`', { default: true })
   .option('--force', 'force install even if the import map is up to date', { default: false })
   .option('--stdout', 'output the import map to stdout', { default: false })
   .option('--compact', 'output a compact import map', { default: false })

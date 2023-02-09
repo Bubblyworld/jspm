@@ -9,6 +9,7 @@ export default async function uninstall(packages: string[], flags: Flags) {
   const generator = new Generator({
     env,
     inputMap,
+    cache: flags.cache,
     baseUrl: cwdUrl,
     mapUrl: getInputMapUrl(flags),
   })
