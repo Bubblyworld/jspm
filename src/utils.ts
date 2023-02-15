@@ -96,7 +96,7 @@ export async function writeOutput(
 
     // TODO: reuse generator instance here, this can be very slow as it does
     // a full retrace of the input map, which we've already done anyway!
-    const generator = new Generator({ inputMap: map });
+    const generator = new Generator({ inputMap: map, env });
     const outputHtml = await generator.htmlInject(html, {
       htmlUrl: new URL(mapFile, cwdUrl()),
       comment: false,
