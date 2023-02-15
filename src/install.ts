@@ -49,7 +49,7 @@ export default async function install(
   // In the latter case we want to trace any inline modules from the HTML file
   // as well, since they may have imports that are not in the import map yet:
   const input = await getInput(flags);
-  if (typeof input !== "undefined") generator.addMappings(input);
+  if (typeof input !== "undefined") await generator.addMappings(input);
 
   log.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
 

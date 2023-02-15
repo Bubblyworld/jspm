@@ -20,6 +20,11 @@ export default async function uninstall(
   logger.info(`Uninstalling packages: ${packages.join(", ")}`);
   logger.info(`Flags: ${JSON.stringify(flags)}`);
 
+  if (packages.length === 0) {
+    console.log("No packages provided to uninstall.");
+    return;
+  }
+
   const env = await getEnv(flags);
   startLoading(
     `Uninstalling ${c.bold(packages.join(", "))}. (${env.join(", ")})`
@@ -33,7 +38,7 @@ export default async function uninstall(
 
   // Read in any import maps or inline modules in the input:
   const input = await getInput(flags);
-  if (typeof input !== "undefined") generator.addMappings(input);
+  if (typeof input !== "undefined") await generator.addMappings(input);
 
   // Uninstall the provided packages.
   await generator.uninstall(packages);
