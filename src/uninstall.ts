@@ -25,7 +25,7 @@ export default async function uninstall(
 
   const env = await getEnv(flags);
   const input = await getInput(flags);
-  const generator = await getGenerator(flags)
+  const generator = await getGenerator(flags);
   if (typeof input !== "undefined") await generator.addMappings(input);
 
   logger.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);

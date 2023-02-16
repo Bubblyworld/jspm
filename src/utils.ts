@@ -56,9 +56,9 @@ export async function writeOutput(
   flags: Flags,
   silent = false
 ) {
-  let map: IImportMapFile = pins?.length ?
-    (await generator.extractMap(pins))?.map :
-    generator.getMap();
+  let map: IImportMapFile = pins?.length
+    ? (await generator.extractMap(pins))?.map
+    : generator.getMap();
 
   // Ensure the 'env' key is always written first:
   map = { env, ...map };
@@ -123,7 +123,10 @@ export async function writeOutput(
   return map;
 }
 
-export async function getGenerator(flags: Flags, setEnv = true): Promise<Generator> {
+export async function getGenerator(
+  flags: Flags,
+  setEnv = true
+): Promise<Generator> {
   return new Generator({
     env: setEnv ? await getEnv(flags) : undefined,
     defaultProvider: getProvider(flags),
@@ -144,7 +147,7 @@ export async function getInput(flags: Flags): Promise<string | undefined> {
   return fs.readFile(mapFile, "utf-8");
 }
 
-export async function getInputMap(flags: Flags): Promise<IImportMapFile> {
+async function getInputMap(flags: Flags): Promise<IImportMapFile> {
   const mapPath = getInputPath(flags);
   const file = await getInput(flags);
   if (!file) return {};
@@ -153,12 +156,8 @@ export async function getInputMap(flags: Flags): Promise<IImportMapFile> {
   // once it's finished processing the file:
   if (mapPath.endsWith(".html")) {
     const generator = await getGenerator(flags, false);
-
-    // TODO: this is actually broken, traceMap.inputMap is _not_ what you think
-    // TODO: this abuses the jspm/generator internals, we should export an API
-    //       for working with html files and use that instead
     await generator.addMappings(file);
-    return generator.traceMap.inputMap;
+    return generator.getMap();
   }
 
   // In all other cases it should be a JSON file:
@@ -167,10 +166,6 @@ export async function getInputMap(flags: Flags): Promise<IImportMapFile> {
 
 export function getInputPath(flags: Flags): string {
   return path.resolve(process.cwd(), flags.map || defaultInputPath);
-}
-
-export function getInputUrl(flags: Flags): URL {
-  return pathToFileURL(getInputPath(flags));
 }
 
 export function getInputDirUrl(flags: Flags): URL {

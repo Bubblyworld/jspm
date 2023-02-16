@@ -1,5 +1,4 @@
 import fs from "fs/promises";
-import { accessSync } from "fs";
 import os from "os";
 import c from "picocolors";
 
