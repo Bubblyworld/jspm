@@ -32,7 +32,7 @@ export default async function install(
   const generator = await getGenerator(flags);
   if (typeof input !== "undefined") await generator.addMappings(input);
 
-  log.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
+  log.info(`Input map parsed: ${JSON.stringify(input)}`);
 
   // Install provided packages, or reinstall existing if none provided:
   if (resolvedPackages.length) {

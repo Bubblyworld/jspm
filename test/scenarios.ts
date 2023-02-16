@@ -49,13 +49,28 @@ export async function runScenario(scenario: Scenario) {
   }
 }
 
+export async function mapDirectory(dir: string): Promise<Files> {
+  const files = new Map<string, string>();
+  for (const file of await fs.readdir(dir)) {
+    const filePath = path.join(dir, file);
+    const data = await fs.readFile(filePath, "utf-8");
+    files.set(file, data);
+  }
+  return files;
+}
+
+export async function mapFile(file: string): Promise<Files> {
+  const files = new Map<string, string>();
+  const data = await fs.readFile(file, "utf-8");
+  files.set(path.basename(file), data);
+  return files;
+}
+
 async function createTmpPkg(scenario: Scenario): Promise<string> {
   // Inject a simple package.json if one doesn't already exist:
   if (!scenario.files?.has("package.json")) {
-    scenario.files = new Map([
-      ["package.json", JSON.stringify(defaultPackageJson)],
-      ...(scenario.files ?? []),
-    ]);
+    if (!scenario.files) scenario.files = new Map();
+    scenario.files.set("package.json", JSON.stringify(defaultPackageJson));
   }
 
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "jspm-"));

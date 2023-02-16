@@ -41,7 +41,7 @@ export default async function link(
     inputPins = pins.concat(await generator.addMappings(input));
   }
 
-  logger.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
+  logger.info(`Input map parsed: ${JSON.stringify(input)}`);
 
   if (modules.length === 0) {
     startLoading(`Linking input.`);

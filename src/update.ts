@@ -28,7 +28,7 @@ export default async function update(
     inputPins = await generator.addMappings(input);
   }
 
-  logger.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
+  logger.info(`Input map parsed: ${JSON.stringify(input)}`);
 
   startLoading(
     `Updating ${c.bold(

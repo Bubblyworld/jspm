@@ -28,7 +28,7 @@ export default async function uninstall(
   const generator = await getGenerator(flags);
   if (typeof input !== "undefined") await generator.addMappings(input);
 
-  logger.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
+  logger.info(`Input map parsed: ${JSON.stringify(input)}`);
 
   startLoading(
     `Uninstalling ${c.bold(packages.join(", "))}. (${env.join(", ")})`
