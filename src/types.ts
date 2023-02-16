@@ -10,6 +10,7 @@ export interface Flags {
   preload?: boolean;
   integrity?: boolean;
   compact?: boolean;
+  silent?: boolean;
 }
 
 export type InjectFlags = Flags & {

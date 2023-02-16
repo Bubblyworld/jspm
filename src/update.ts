@@ -4,8 +4,8 @@ import {
   getEnv,
   getGenerator,
   getInput,
-  startLoading,
-  stopLoading,
+  startSpinner,
+  stopSpinner,
   writeOutput,
 } from "./utils";
 import * as logger from "./logger";
@@ -13,7 +13,6 @@ import * as logger from "./logger";
 export default async function update(
   packages: string[],
   flags: Flags,
-  silent = false
 ) {
   logger.info(`Updating packages: ${packages.join(", ")}`);
   logger.info(`Flags: ${JSON.stringify(flags)}`);
@@ -28,9 +27,9 @@ export default async function update(
     inputPins = await generator.addMappings(input);
   }
 
-  logger.info(`Input map parsed: ${JSON.stringify(input)}`);
+  logger.info(`Input map parsed: ${input}`);
 
-  startLoading(
+  !flags.silent && startSpinner(
     `Updating ${c.bold(
       packages.length ? packages.join(", ") : "everything"
     )}. (${env.join(", ")})`
@@ -39,6 +38,6 @@ export default async function update(
   // Update the provided packages:
   await generator.update(packages.length ? packages : inputPins);
 
-  stopLoading();
-  return await writeOutput(generator, null, env, flags, silent);
+  stopSpinner();
+  return await writeOutput(generator, null, env, flags, flags.silent);
 }

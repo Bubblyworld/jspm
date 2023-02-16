@@ -6,8 +6,8 @@ import {
   getInput,
   getInputPath,
   getOutputPath,
-  startLoading,
-  stopLoading,
+  startSpinner,
+  stopSpinner,
   writeOutput,
 } from "./utils";
 import * as logger from "./logger";
@@ -15,7 +15,6 @@ import * as logger from "./logger";
 export default async function link(
   modules: string[],
   flags: Flags,
-  silent = false
 ) {
   logger.info(`Linking modules: ${modules.join(", ")}`);
   logger.info(`Flags: ${JSON.stringify(flags)}`);
@@ -41,27 +40,28 @@ export default async function link(
     inputPins = pins.concat(await generator.addMappings(input));
   }
 
-  logger.info(`Input map parsed: ${JSON.stringify(input)}`);
+  logger.info(`Input map parsed: ${input}`);
 
   if (modules.length === 0) {
-    startLoading(`Linking input.`);
+    !flags.silent && startSpinner(`Linking input.`);
   } else {
-    startLoading(
+    !flags.silent && startSpinner(
       `Linking ${c.bold(
         resolvedModules.map((p) => p.alias || p.target).join(", ")
       )}. (${env.join(", ")})`
     );
   }
 
+  logger.info(`Trace installing: ${inputPins.concat(pins).join(", ")}`);
   await generator.traceInstall(inputPins.concat(pins));
 
   // If the user has provided modules and the output path is different to the
   // input path, then we behave as an extraction from the input map. In all
   // other cases we behave as an update:
-  stopLoading();
+  stopSpinner();
   if (inputMapPath !== outputMapPath && modules.length !== 0) {
-    return await writeOutput(generator, pins, env, flags, silent);
+    return await writeOutput(generator, pins, env, flags, flags.silent);
   } else {
-    return await writeOutput(generator, null, env, flags, silent);
+    return await writeOutput(generator, null, env, flags, flags.silent);
   }
 }

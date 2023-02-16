@@ -46,8 +46,24 @@ const outputOpt: opt = [
   "File to inject the final import map into",
   {},
 ];
+const preloadOpt: opt = [
+  "--preload",
+  "Add module preloads to HTML output",
+  { default: false },
+]
+const integrityOpt: opt = [
+  "--integrity",
+  "Add module preloads with integrity attributes to HTML output",
+  { default: false },
+]
+const silentOpt: opt = [
+  "--silent",
+  "Silence all output",
+  { default: false },
+];
 
-cli.usage("[command] [options]").version(version).help();
+
+cli.usage("[command] [options]").option(...silentOpt).version(version).help();
 
 cli.command("").action(cli.outputHelp);
 
@@ -59,8 +75,10 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
-  .option(...stdoutOpt)
+  .option(...integrityOpt)
+  .option(...preloadOpt)
   .option(...compactOpt)
+  .option(...stdoutOpt)
   .action(wrapCommand(link));
 
 cli
@@ -71,8 +89,10 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
-  .option(...stdoutOpt)
+  .option(...integrityOpt)
+  .option(...preloadOpt)
   .option(...compactOpt)
+  .option(...stdoutOpt)
   .action(wrapCommand(install));
 
 cli
@@ -82,8 +102,10 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
-  .option(...stdoutOpt)
+  .option(...integrityOpt)
+  .option(...preloadOpt)
   .option(...compactOpt)
+  .option(...stdoutOpt)
   .action(wrapCommand(uninstall));
 
 cli
@@ -94,8 +116,10 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
-  .option(...stdoutOpt)
+  .option(...integrityOpt)
+  .option(...preloadOpt)
   .option(...compactOpt)
+  .option(...stdoutOpt)
   .action(wrapCommand(update));
 
 cli
