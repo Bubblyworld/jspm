@@ -45,11 +45,11 @@ export default async function install(
     !flags.silent && startSpinner(`Reinstalling all top-level imports.`);
     await generator.reinstall();
   }
+  stopSpinner();
 
   // If the input and output maps are the same, we behave in an additive way
   // and trace all top-level pins to the output file. Otherwise, we behave as
   // an extraction and only trace the provided packages to the output file.
-  stopSpinner();
   const inputMapPath = getInputPath(flags);
   const outputMapPath = getOutputPath(flags);
   if (inputMapPath !== outputMapPath && resolvedPackages.length) {

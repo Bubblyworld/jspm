@@ -1,3 +1,4 @@
+import fs from "fs";
 import c from "picocolors";
 import type { Flags } from "./types";
 import {
@@ -19,10 +20,33 @@ export default async function link(
   logger.info(`Linking modules: ${modules.join(", ")}`);
   logger.info(`Flags: ${JSON.stringify(flags)}`);
 
-  const resolvedModules = modules.map((p) => {
-    if (!p.includes("=")) return { target: p };
-    const [alias, target] = p.split("=");
-    return { alias, target };
+  const resolvedModules = modules.map((p: string) => {
+    let res: { target: string; alias?: string };
+    if (p.includes("=")) {
+      const [alias, target] = p.split("=");
+      res = { alias, target };
+    } else {
+      res = { target: p };
+    }
+
+    // If the user provides a bare specifier like 'app.js', we can check for
+    // a local file of the same name ('./app.js') and use that as the target
+    // rather. If the user really wants to link the 'app.js' package they can
+    // prefix it with '%' as follows: '%app.js':
+    if (res.target.startsWith("%")) {
+      logger.info(`Resolving target '${res.target}' as '${res.target.slice(1)}'`);
+      res.target = res.target.slice(1);
+    } else {
+      try {
+        fs.accessSync(res.target);
+        logger.info(`Resolving target '${res.target}' as './${res.target}'`);
+        res.target = `./${res.target}`;
+      } catch (e) {
+        // No file found, so we leave the target as-is.
+      }
+    }
+
+    return res;
   });
 
   const env = await getEnv(flags);
@@ -41,6 +65,7 @@ export default async function link(
   }
 
   logger.info(`Input map parsed: ${input}`);
+  logger.info(`Trace installing: ${inputPins.concat(pins).join(", ")}`);
 
   if (modules.length === 0) {
     !flags.silent && startSpinner(`Linking input.`);
@@ -51,14 +76,12 @@ export default async function link(
       )}. (${env.join(", ")})`
     );
   }
-
-  logger.info(`Trace installing: ${inputPins.concat(pins).join(", ")}`);
   await generator.traceInstall(inputPins.concat(pins));
+  stopSpinner();
 
   // If the user has provided modules and the output path is different to the
   // input path, then we behave as an extraction from the input map. In all
-  // other cases we behave as an update:
-  stopSpinner();
+  // other cases we behave as an update to the map:
   if (inputMapPath !== outputMapPath && modules.length !== 0) {
     return await writeOutput(generator, pins, env, flags, flags.silent);
   } else {

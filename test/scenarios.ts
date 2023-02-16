@@ -59,11 +59,15 @@ export async function mapDirectory(dir: string): Promise<Files> {
   return files;
 }
 
-export async function mapFile(file: string): Promise<Files> {
-  const files = new Map<string, string>();
-  const data = await fs.readFile(file, "utf-8");
-  files.set(path.basename(file), data);
-  return files;
+export async function mapFile(files: string | string[]): Promise<Files> {
+  if (typeof files === "string") return mapFile([files]);
+
+  const res = new Map<string, string>();
+  for (const file of files) {
+    const data = await fs.readFile(file, "utf-8");
+    res.set(path.basename(file), data);
+  }
+  return res;
 }
 
 async function createTmpPkg(scenario: Scenario): Promise<string> {
