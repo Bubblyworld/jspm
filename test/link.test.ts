@@ -6,7 +6,7 @@ const aJs = await fs.readFile("test/fixtures/a.js", "utf-8");
 const bJs = await fs.readFile("test/fixtures/b.js", "utf-8");
 const importMap = new Map(
   Object.entries({
-    "importmap.json": await fs.readFile("test/importmap.json", "utf-8"),
+    "importmap.json": await fs.readFile("test/fixtures/importmap.json", "utf-8"),
   })
 );
 const htmlFile = new Map(

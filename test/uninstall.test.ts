@@ -7,7 +7,7 @@ import uninstall from "../src/uninstall";
     ["react"],
     {
       stdout: true,
-      map: "test/importmap.json",
+      map: "test/fixtures/importmap.json",
     },
     true
   );
