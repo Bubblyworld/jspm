@@ -1,16 +1,11 @@
-import { Generator } from "@jspm/generator";
 import c from "picocolors";
 import type { Flags } from "./types";
 import {
-  attachEnv,
-  cwdUrl,
   getEnv,
+  getGenerator,
   getInput,
   getInputPath,
-  getInputUrl,
   getOutputPath,
-  getProvider,
-  getResolutions,
   startLoading,
   stopLoading,
   writeOutput,
@@ -31,18 +26,22 @@ export default async function link(
     return { alias, target };
   });
 
+  const env = await getEnv(flags);
   const inputMapPath = getInputPath(flags);
   const outputMapPath = getOutputPath(flags);
-  const provider = getProvider(flags);
-  const env = await getEnv(flags);
+  const generator = await getGenerator(flags);
 
-  const generator = new Generator({
-    env: [...env],
-    defaultProvider: provider,
-    baseUrl: cwdUrl(),
-    mapUrl: getInputUrl(flags),
-    resolutions: getResolutions(flags),
-  });
+  // The input map is either from a JSON file or extracted from an HTML file.
+  // In the latter case we want to trace any inline modules from the HTML file
+  // as well, since they may have imports that are not in the import map yet:
+  let inputPins = [];
+  const input = await getInput(flags);
+  const pins = resolvedModules.map((p) => p.target);
+  if (typeof input !== "undefined") {
+    inputPins = pins.concat(await generator.addMappings(input));
+  }
+
+  logger.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
 
   if (modules.length === 0) {
     startLoading(`Linking input.`);
@@ -54,31 +53,15 @@ export default async function link(
     );
   }
 
-  // The input map is either from a JSON file or extracted from an HTML file.
-  // In the latter case we want to trace any inline modules from the HTML file
-  // as well, since they may have imports that are not in the import map yet:
-  let inputPins: string[] = [];
-  const input = await getInput(flags);
-  if (typeof input !== "undefined") {
-    inputPins = await generator.addMappings(input);
-  }
-
-  // Trace everything in the input file, along with the provided packages:
-  await generator.traceInstall(
-    inputPins.concat(resolvedModules.map((p) => p.target))
-  );
+  await generator.traceInstall(inputPins.concat(pins));
 
   // If the user has provided modules and the output path is different to the
   // input path, then we behave as an extraction from the input map. In all
   // other cases we behave as an update:
-  let outputMap = generator.getMap();
-  if (inputMapPath !== outputMapPath && modules.length !== 0)
-    ({ map: outputMap } = await generator.extractMap(modules));
-
-  // Attach explicit environment keys and inject result into output file:
   stopLoading();
-  attachEnv(outputMap, env);
-  await writeOutput(outputMap, flags, silent);
-
-  return generator.getMap();
+  if (inputMapPath !== outputMapPath && modules.length !== 0) {
+    return await writeOutput(generator, pins, env, flags, silent);
+  } else {
+    return await writeOutput(generator, null, env, flags, silent);
+  }
 }

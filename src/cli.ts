@@ -52,6 +52,18 @@ cli.usage("[command] [options]").version(version).help();
 cli.command("").action(cli.outputHelp);
 
 cli
+  .command("link [...modules]", "link modules")
+  .alias("trace")
+  .option(...mapOpt)
+  .option(...outputOpt)
+  .option(...envOpt)
+  .option(...resolutionOpt)
+  .option(...providerOpt)
+  .option(...stdoutOpt)
+  .option(...compactOpt)
+  .action(wrapCommand(link));
+
+cli
   .command("install [...packages]", "install packages")
   .alias("i")
   .option(...mapOpt)
@@ -73,18 +85,6 @@ cli
   .option(...stdoutOpt)
   .option(...compactOpt)
   .action(wrapCommand(uninstall));
-
-cli
-  .command("link [...modules]", "link modules")
-  .alias("trace")
-  .option(...mapOpt)
-  .option(...outputOpt)
-  .option(...envOpt)
-  .option(...resolutionOpt)
-  .option(...providerOpt)
-  .option(...stdoutOpt)
-  .option(...compactOpt)
-  .action(wrapCommand(link));
 
 cli
   .command("update [...packages]", "update packages")

@@ -1,16 +1,11 @@
-import { Generator } from "@jspm/generator";
 import c from "picocolors";
 import type { Flags } from "./types";
 import {
-  attachEnv,
-  cwdUrl,
   getEnv,
+  getGenerator,
   getInput,
   getInputPath,
-  getInputUrl,
   getOutputPath,
-  getProvider,
-  getResolutions,
   parsePackageSpec,
   startLoading,
   stopLoading,
@@ -32,23 +27,9 @@ export default async function install(
     return { alias, target };
   });
 
-  const inputMapPath = getInputPath(flags);
-  const outputMapPath = getOutputPath(flags);
-  const provider = getProvider(flags);
   const env = await getEnv(flags);
-
-  const generator = new Generator({
-    env: [...env],
-    defaultProvider: provider,
-    baseUrl: cwdUrl(),
-    mapUrl: getInputUrl(flags),
-    resolutions: getResolutions(flags),
-  });
-
-  // The input map is either from a JSON file or extracted from an HTML file.
-  // In the latter case we want to trace any inline modules from the HTML file
-  // as well, since they may have imports that are not in the import map yet:
   const input = await getInput(flags);
+  const generator = await getGenerator(flags);
   if (typeof input !== "undefined") await generator.addMappings(input);
 
   log.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
@@ -66,25 +47,19 @@ export default async function install(
     await generator.reinstall();
   }
 
-  log.info("Extracting map from generator.");
-
   // If the input and output maps are the same, we behave in an additive way
   // and trace all top-level pins to the output file. Otherwise, we behave as
   // an extraction and only trace the provided packages to the output file.
-  let outputMap = generator.getMap();
+  stopLoading();
+  const inputMapPath = getInputPath(flags);
+  const outputMapPath = getOutputPath(flags);
   if (inputMapPath !== outputMapPath && resolvedPackages.length) {
     const pins = resolvedPackages.map((p) =>
       parsePackageSpec(p.alias || p.target)
     );
-    ({ map: outputMap } = await generator.extractMap(pins));
+
+    return await writeOutput(generator, pins, env, flags, silent);
+  } else {
+    return await writeOutput(generator, null, env, flags, silent);
   }
-
-  log.info(`Map extraction complete: ${JSON.stringify(outputMap, null, 2)}`);
-
-  // Attach explicit environment keys and write the output:
-  stopLoading();
-  attachEnv(outputMap, env);
-  await writeOutput(outputMap, flags, silent);
-
-  return outputMap;
 }

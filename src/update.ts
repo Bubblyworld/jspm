@@ -1,13 +1,9 @@
-import { Generator } from "@jspm/generator";
 import c from "picocolors";
 import type { Flags } from "./types";
 import {
-  attachEnv,
-  cwdUrl,
   getEnv,
+  getGenerator,
   getInput,
-  getInputUrl,
-  getResolutions,
   startLoading,
   stopLoading,
   writeOutput,
@@ -23,18 +19,7 @@ export default async function update(
   logger.info(`Flags: ${JSON.stringify(flags)}`);
 
   const env = await getEnv(flags);
-  startLoading(
-    `Updating ${c.bold(
-      packages.length ? packages.join(", ") : "everything"
-    )}. (${env.join(", ")})`
-  );
-
-  const generator = new Generator({
-    env,
-    baseUrl: cwdUrl(),
-    mapUrl: getInputUrl(flags),
-    resolutions: getResolutions(flags),
-  });
+  const generator = await getGenerator(flags);
 
   // Read in any import maps or inline modules in the input:
   let inputPins: string[] = [];
@@ -43,14 +28,17 @@ export default async function update(
     inputPins = await generator.addMappings(input);
   }
 
+  logger.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
+
+  startLoading(
+    `Updating ${c.bold(
+      packages.length ? packages.join(", ") : "everything"
+    )}. (${env.join(", ")})`
+  );
+
   // Update the provided packages:
   await generator.update(packages.length ? packages : inputPins);
-  const outputMap = generator.getMap();
 
-  // Attach explicit environment keys and write the output:
   stopLoading();
-  attachEnv(outputMap, env);
-  await writeOutput(outputMap, flags, silent);
-
-  return outputMap;
+  return await writeOutput(generator, null, env, flags, silent);
 }

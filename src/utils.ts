@@ -50,19 +50,24 @@ export function wrapCommand(fn: Function) {
 
 // TODO: loading spinner for output writing
 export async function writeOutput(
-  map: IImportMapFile,
+  generator: Generator,
+  pins: string[] | null,
+  env: string[],
   flags: Flags,
   silent = false
 ) {
+  let map: IImportMapFile = pins?.length ?
+    (await generator.extractMap(pins))?.map :
+    generator.getMap();
+
   // Ensure the 'env' key is always written first:
-  const env = map.env;
-  delete map.env;
   map = { env, ...map };
 
   // If the stdout flag is set, we always write to stdout:
+  // TODO: should probably spit out html if output map is a *.html
   if (flags.stdout) {
     !silent && console.log(JSON.stringify(map, null, 2));
-    return;
+    return map;
   }
 
   // Don't write an output file without permission:
@@ -94,11 +99,8 @@ export async function writeOutput(
       );
     }
 
-    // TODO: reuse generator instance here, this can be very slow as it does
-    // a full retrace of the input map, which we've already done anyway!
-    const generator = new Generator({ inputMap: map, env });
     const outputHtml = await generator.htmlInject(html, {
-      htmlUrl: new URL(mapFile, cwdUrl()),
+      htmlUrl: generator.mapUrl, // URL of the output map
       comment: false,
       preload: flags.preload,
       integrity: flags.integrity,
@@ -108,7 +110,7 @@ export async function writeOutput(
     await fs.writeFile(mapFile, outputHtml);
     !silent && console.warn(`${c.green("Ok:")} Updated ${c.cyan(mapFileRel)}`);
 
-    return;
+    return map;
   }
 
   // Otherwise we output the import map in standard JSON format:
@@ -118,6 +120,17 @@ export async function writeOutput(
   );
 
   !silent && console.warn(`${c.green("Ok:")} Updated ${c.cyan(mapFileRel)}`);
+  return map;
+}
+
+export async function getGenerator(flags: Flags, setEnv = true): Promise<Generator> {
+  return new Generator({
+    env: setEnv ? await getEnv(flags) : undefined,
+    defaultProvider: getProvider(flags),
+    baseUrl: getInputDirUrl(flags),
+    mapUrl: getOutputUrl(flags),
+    resolutions: getResolutions(flags),
+  });
 }
 
 export async function getInput(flags: Flags): Promise<string | undefined> {
@@ -139,13 +152,9 @@ export async function getInputMap(flags: Flags): Promise<IImportMapFile> {
   // For HTML files, we can extract the input map from the generator's tracer
   // once it's finished processing the file:
   if (mapPath.endsWith(".html")) {
-    const generator = new Generator({
-      baseUrl: cwdUrl(),
-      mapUrl: getInputUrl(flags),
-      resolutions: getResolutions(flags),
-      defaultProvider: getProvider(flags),
-    });
+    const generator = await getGenerator(flags, false);
 
+    // TODO: this is actually broken, traceMap.inputMap is _not_ what you think
     // TODO: this abuses the jspm/generator internals, we should export an API
     //       for working with html files and use that instead
     await generator.addMappings(file);
@@ -164,11 +173,19 @@ export function getInputUrl(flags: Flags): URL {
   return pathToFileURL(getInputPath(flags));
 }
 
+export function getInputDirUrl(flags: Flags): URL {
+  return pathToFileURL(path.dirname(getInputPath(flags)));
+}
+
 export function getOutputPath(flags: Flags): string | undefined {
   return path.resolve(
     process.cwd(),
     flags.output || flags.map || defaultInputPath
   );
+}
+
+export function getOutputUrl(flags: Flags): URL {
+  return pathToFileURL(getOutputPath(flags));
 }
 
 const excludeDefinitions = {

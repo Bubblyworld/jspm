@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { statSync } from "fs";
+import { accessSync } from "fs";
 import os from "os";
 import c from "picocolors";
 
@@ -19,17 +19,16 @@ if (logEnabled) {
   ({ log, logStream } = createLogger());
 
   try {
-    // First check if process.env.JSPM_CLI_LOG is a file:
     let logPath;
-    try {
-      const stats = statSync(process.env.JSPM_CLI_LOG);
-      if (stats.isFile()) {
-        logPath = process.env.JSPM_CLI_LOG;
-      }
-    } catch {
+    if (
+      process.env.JSPM_CLI_LOG === "1" ||
+      process.env.JSPM_CLI_LOG?.toLowerCase() === "true"
+    ) {
       logPath = `${os.tmpdir()}/jspm-${new Date()
         .toISOString()
         .slice(0, 19)}.log`;
+    } else {
+      logPath = process.env.JSPM_CLI_LOG;
     }
 
     const logWriter = async (msg: string) =>

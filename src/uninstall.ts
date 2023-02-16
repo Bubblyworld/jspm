@@ -1,11 +1,9 @@
-import { Generator } from "@jspm/generator";
 import c from "picocolors";
 import type { Flags } from "./types";
 import {
-  cwdUrl,
   getEnv,
+  getGenerator,
   getInput,
-  getInputUrl,
   startLoading,
   stopLoading,
   writeOutput,
@@ -26,24 +24,19 @@ export default async function uninstall(
   }
 
   const env = await getEnv(flags);
+  const input = await getInput(flags);
+  const generator = await getGenerator(flags)
+  if (typeof input !== "undefined") await generator.addMappings(input);
+
+  logger.info(`Input map parsed: ${JSON.stringify(input, null, 2)}`);
+
   startLoading(
     `Uninstalling ${c.bold(packages.join(", "))}. (${env.join(", ")})`
   );
 
-  const generator = new Generator({
-    env,
-    baseUrl: cwdUrl(),
-    mapUrl: getInputUrl(flags),
-  });
-
-  // Read in any import maps or inline modules in the input:
-  const input = await getInput(flags);
-  if (typeof input !== "undefined") await generator.addMappings(input);
-
   // Uninstall the provided packages.
   await generator.uninstall(packages);
-  await writeOutput(generator.getMap(), flags, silent);
-  stopLoading();
 
-  return generator.getMap();
+  stopLoading();
+  return await writeOutput(generator, null, env, flags, silent);
 }
