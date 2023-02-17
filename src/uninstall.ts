@@ -20,7 +20,7 @@ export default async function uninstall(
   log(`Flags: ${JSON.stringify(flags)}`);
 
   if (packages.length === 0) {
-    !flags.silent && console.log("No packages provided to uninstall.");
+    !flags.silent && console.warn(`${c.red("Warning:")} Nothing to uninstall. Please provide a list of packages.`);
     return;
   }
 

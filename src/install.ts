@@ -31,7 +31,10 @@ export default async function install(
   const env = await getEnv(flags);
   const input = await getInput(flags);
   const generator = await getGenerator(flags);
-  if (typeof input !== "undefined") await generator.addMappings(input);
+  let pins = [];
+  if (input) {
+    pins = await generator.addMappings(input);
+  }
 
   log(`Input map parsed: ${input}`);
 
@@ -43,11 +46,14 @@ export default async function install(
       )}. (${env.join(", ")})`
     );
     await generator.install(resolvedPackages);
-  } else {
+    stopSpinner();
+  } else if (pins.length) {
     !flags.silent && startSpinner(`Reinstalling all top-level imports.`);
     await generator.reinstall();
+    stopSpinner();
+  } else {
+    !flags.silent && console.warn(`${c.red("Warning:")} Nothing to install, outputting an empty import map. Either provide a list of package to install, or a non-empty input file.`);
   }
-  stopSpinner();
 
   // If the input and output maps are the same, we behave in an additive way
   // and trace all top-level pins to the output file. Otherwise, we behave as

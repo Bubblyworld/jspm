@@ -59,27 +59,32 @@ export default async function link(
   // The input map is either from a JSON file or extracted from an HTML file.
   // In the latter case we want to trace any inline modules from the HTML file
   // as well, since they may have imports that are not in the import map yet:
-  let inputPins = [];
   const input = await getInput(flags);
   const pins = resolvedModules.map((p) => p.target);
-  if (typeof input !== "undefined") {
-    inputPins = pins.concat(await generator.addMappings(input));
+  let allPins = pins;
+  if (input) {
+    allPins = pins.concat(await generator.addMappings(input));
   }
 
   log(`Input map parsed: ${input}`);
-  log(`Trace installing: ${inputPins.concat(pins).join(", ")}`);
+  log(`Trace installing: ${allPins.concat(pins).join(", ")}`);
 
-  if (modules.length === 0) {
-    !flags.silent && startSpinner(`Linking input.`);
+  if (allPins.length) {
+    if (modules.length === 0) {
+      !flags.silent && startSpinner(`Linking input.`);
+    } else {
+      !flags.silent && startSpinner(
+        `Linking ${c.bold(
+          resolvedModules.map((p) => p.alias || p.target).join(", ")
+        )}. (${env.join(", ")})`
+      );
+    }
+
+    await generator.traceInstall(allPins.concat(pins));
+    stopSpinner();
   } else {
-    !flags.silent && startSpinner(
-      `Linking ${c.bold(
-        resolvedModules.map((p) => p.alias || p.target).join(", ")
-      )}. (${env.join(", ")})`
-    );
+    !flags.silent && console.warn(`${c.red("Warning:")} Nothing to link, outputting an empty import map. Either provide a list of modules to link, or a non-empty input file.`);
   }
-  await generator.traceInstall(inputPins.concat(pins));
-  stopSpinner();
 
   // If the user has provided modules and the output path is different to the
   // input path, then we behave as an extraction from the input map. In all
