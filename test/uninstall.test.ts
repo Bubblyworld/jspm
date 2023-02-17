@@ -6,10 +6,10 @@ import uninstall from "../src/uninstall";
   const map = await uninstall(
     ["react"],
     {
+      silent: true,
       stdout: true,
       map: "test/fixtures/importmap.json",
     },
-    true
   );
   assert.ok(typeof map.imports?.react);
 }

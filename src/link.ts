@@ -11,14 +11,16 @@ import {
   stopSpinner,
   writeOutput,
 } from "./utils";
-import * as logger from "./logger";
+import { withType } from "./logger";
 
 export default async function link(
   modules: string[],
   flags: Flags,
 ) {
-  logger.info(`Linking modules: ${modules.join(", ")}`);
-  logger.info(`Flags: ${JSON.stringify(flags)}`);
+  const log = withType("link/link");
+
+  log(`Linking modules: ${modules.join(", ")}`);
+  log(`Flags: ${JSON.stringify(flags)}`);
 
   const resolvedModules = modules.map((p: string) => {
     let res: { target: string; alias?: string };
@@ -34,12 +36,12 @@ export default async function link(
     // rather. If the user really wants to link the 'app.js' package they can
     // prefix it with '%' as follows: '%app.js':
     if (res.target.startsWith("%")) {
-      logger.info(`Resolving target '${res.target}' as '${res.target.slice(1)}'`);
+      log(`Resolving target '${res.target}' as '${res.target.slice(1)}'`);
       res.target = res.target.slice(1);
     } else {
       try {
         fs.accessSync(res.target);
-        logger.info(`Resolving target '${res.target}' as './${res.target}'`);
+        log(`Resolving target '${res.target}' as './${res.target}'`);
         res.target = `./${res.target}`;
       } catch (e) {
         // No file found, so we leave the target as-is.
@@ -64,8 +66,8 @@ export default async function link(
     inputPins = pins.concat(await generator.addMappings(input));
   }
 
-  logger.info(`Input map parsed: ${input}`);
-  logger.info(`Trace installing: ${inputPins.concat(pins).join(", ")}`);
+  log(`Input map parsed: ${input}`);
+  log(`Trace installing: ${inputPins.concat(pins).join(", ")}`);
 
   if (modules.length === 0) {
     !flags.silent && startSpinner(`Linking input.`);

@@ -8,14 +8,16 @@ import {
   stopSpinner,
   writeOutput,
 } from "./utils";
-import * as logger from "./logger";
+import { withType } from "./logger";
 
 export default async function uninstall(
   packages: string[],
   flags: Flags,
 ) {
-  logger.info(`Uninstalling packages: ${packages.join(", ")}`);
-  logger.info(`Flags: ${JSON.stringify(flags)}`);
+  const log = withType("install/install");
+
+  log(`Uninstalling packages: ${packages.join(", ")}`);
+  log(`Flags: ${JSON.stringify(flags)}`);
 
   if (packages.length === 0) {
     !flags.silent && console.log("No packages provided to uninstall.");
@@ -27,7 +29,7 @@ export default async function uninstall(
   const generator = await getGenerator(flags);
   if (typeof input !== "undefined") await generator.addMappings(input);
 
-  logger.info(`Input map parsed: ${input}`);
+  log(`Input map parsed: ${input}`);
 
   !flags.silent && startSpinner(
     `Uninstalling ${c.bold(packages.join(", "))}. (${env.join(", ")})`

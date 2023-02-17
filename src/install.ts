@@ -11,14 +11,16 @@ import {
   stopSpinner,
   writeOutput,
 } from "./utils";
-import * as log from "./logger";
+import { withType } from "./logger";
 
 export default async function install(
   packages: string[],
   flags: Flags,
 ) {
-  log.info(`Installing packages: ${packages.join(", ")}`);
-  log.info(`Flags: ${JSON.stringify(flags)}`);
+  const log = withType("install/install");
+
+  log(`Installing packages: ${packages.join(", ")}`);
+  log(`Flags: ${JSON.stringify(flags)}`);
 
   const resolvedPackages = packages.map((p) => {
     if (!p.includes("=")) return { target: p };
@@ -31,7 +33,7 @@ export default async function install(
   const generator = await getGenerator(flags);
   if (typeof input !== "undefined") await generator.addMappings(input);
 
-  log.info(`Input map parsed: ${input}`);
+  log(`Input map parsed: ${input}`);
 
   // Install provided packages, or reinstall existing if none provided:
   if (resolvedPackages.length) {

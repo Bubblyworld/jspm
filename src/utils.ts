@@ -5,7 +5,7 @@ import c from "picocolors";
 import ora from "ora";
 import { Generator } from "@jspm/generator";
 import type { Flags, IImportMapFile } from "./types";
-import * as logger from "./logger";
+import { withType } from "./logger";
 
 // Default import map to use if none is provided:
 const defaultInputPath = "./importmap.json";
@@ -135,12 +135,14 @@ async function writeJsonOutput(
   flags: Flags,
   silent = false
 ) {
+  const log = withType("utils/writeJsonOutput");
+
   let map: IImportMapFile;
   if (pins?.length) {
-    logger.info(`Extracting map for top-level pins: ${pins?.join(", ")}`);
+    log(`Extracting map for top-level pins: ${pins?.join(", ")}`);
     map = (await generator.extractMap(pins))?.map;
   } else {
-    logger.info(`Extracting full map`);
+    log(`Extracting full map`);
     map = generator.getMap();
   }
   map = { env, ...map };
