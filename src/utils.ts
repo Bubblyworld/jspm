@@ -22,6 +22,10 @@ const defaultHtmlTemplate = `<!DOCTYPE html>
   </body>
 </html>`;
 
+// Providers that can be used to resolve dependencies:
+const availableProviders = ["jspm", "jspm.system", "nodemodules", "skypack", "jsdelivr", "unpkg"];
+
+
 export class JspmError extends Error {
   jspmError = true;
 }
@@ -114,13 +118,14 @@ async function writeHtmlOutput(
     );
   }
 
+  // TODO: Inject env into the import map somehow.
   const outputHtml = await generator.htmlInject(html, {
     pins: pins ?? true,
     htmlUrl: generator.mapUrl, // URL of the output map
     preload: flags.preload,
     integrity: flags.integrity,
     whitespace: !flags.compact,
-    comment: `Generated for environment: ${env.join(", ")}`,
+    comment: false,
   });
 
   await fs.writeFile(mapFile, outputHtml);
@@ -273,6 +278,9 @@ export async function getEnv(flags: Flags) {
 }
 
 function getProvider(flags: Flags) {
+  if (flags.provider && !availableProviders.includes(flags.provider))
+    throw new JspmError(
+      `Invalid provider "${flags.provider}". Available providers are: "${availableProviders.join('", "')}".`);
   return flags.provider || "jspm";
 }
 
