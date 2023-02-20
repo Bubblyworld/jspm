@@ -176,8 +176,9 @@ export async function getGenerator(
   return new Generator({
     env: setEnv ? await getEnv(flags) : undefined,
     defaultProvider: getProvider(flags),
-    baseUrl: getInputDirUrl(flags),
-    mapUrl: getOutputUrl(flags),
+    baseUrl: getBaseUrl(flags),
+    mapUrl: getMapUrl(flags),
+    rootUrl: flags.root,
     resolutions: getResolutions(flags),
     cache: getCacheMode(flags),
   });
@@ -215,7 +216,7 @@ export function getInputPath(flags: Flags): string {
   return path.resolve(process.cwd(), flags.map || defaultInputPath);
 }
 
-function getInputDirUrl(flags: Flags): URL {
+function getBaseUrl(flags: Flags): URL {
   return pathToFileURL(path.dirname(getInputPath(flags)));
 }
 
@@ -226,7 +227,7 @@ export function getOutputPath(flags: Flags): string | undefined {
   );
 }
 
-function getOutputUrl(flags: Flags): URL {
+function getMapUrl(flags: Flags): URL {
   return pathToFileURL(getOutputPath(flags));
 }
 
@@ -290,7 +291,6 @@ function removeNonStaticEnvKeys(env: string[]) {
     (e) => e !== "import" && e !== "require" && e !== "default"
   );
 }
-
 
 function getResolutions(flags: Flags): Record<string, string> {
   if (!flags.resolution) return;

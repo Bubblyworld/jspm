@@ -5,6 +5,7 @@ export interface Flags {
   env?: string | string[];
   map?: string;
   output?: string;
+  root?: string;
   provider?: string;
   stdout?: boolean;
   preload?: boolean;

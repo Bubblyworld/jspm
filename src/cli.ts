@@ -66,6 +66,11 @@ const cacheOpt: opt = [
   "Cache mode for fetches (online, offline, no-cache)",
   { default: "online" },
 ];
+const rootOpt: opt = [
+  "--root <url>",
+  "URL to treat as the root of the server",
+  {},
+];
 
 cli.usage("[command] [options]").option(...silentOpt).version(version).help();
 
@@ -80,6 +85,7 @@ cli
   .option(...resolutionOpt)
   .option(...providerOpt)
   .option(...cacheOpt)
+  .option(...rootOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
@@ -95,6 +101,7 @@ cli
   .option(...resolutionOpt)
   .option(...providerOpt)
   .option(...cacheOpt)
+  .option(...rootOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
@@ -109,6 +116,7 @@ cli
   .option(...resolutionOpt)
   .option(...providerOpt)
   .option(...cacheOpt)
+  .option(...rootOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
@@ -124,6 +132,7 @@ cli
   .option(...resolutionOpt)
   .option(...providerOpt)
   .option(...cacheOpt)
+  .option(...rootOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
