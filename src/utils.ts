@@ -309,9 +309,9 @@ function removeNonStaticEnvKeys(env: string[]) {
 
 function getResolutions(flags: Flags): Record<string, string> {
   if (!flags.resolution) return;
-  const resolutions = Array.isArray(flags.resolution)
-    ? flags.resolution
-    : flags.resolution.split(",").map((r) => r.trim());
+  const resolutions = Array.isArray(flags.resolution) ?
+    flags.resolution :
+    flags.resolution.split(",").map((r) => r.trim());
 
   return Object.fromEntries(
     resolutions.map((resolution) => {
