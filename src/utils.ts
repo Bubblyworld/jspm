@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import c from "picocolors";
 import ora from "ora";
 import { Generator } from "@jspm/generator";
-import type { Flags, IImportMapFile } from "./types";
+import type { Flags, IImportMapJspm } from "./types";
 import { withType } from "./logger";
 
 // Default import map to use if none is provided:
@@ -75,7 +75,7 @@ async function writeStdoutOutput(
   env: string[],
   silent = false
 ) {
-  let map: IImportMapFile = pins?.length
+  let map: IImportMapJspm = pins?.length
     ? (await generator.extractMap(pins))?.map
     : generator.getMap();
   map = { env, ...map };
@@ -142,7 +142,7 @@ async function writeJsonOutput(
 ) {
   const log = withType("utils/writeJsonOutput");
 
-  let map: IImportMapFile;
+  let map: IImportMapJspm;
   if (pins?.length) {
     log(`Extracting map for top-level pins: ${pins?.join(", ")}`);
     map = (await generator.extractMap(pins))?.map;
@@ -179,6 +179,7 @@ export async function getGenerator(
     baseUrl: getInputDirUrl(flags),
     mapUrl: getOutputUrl(flags),
     resolutions: getResolutions(flags),
+    cache: getCacheMode(flags),
   });
 }
 
@@ -193,7 +194,7 @@ export async function getInput(flags: Flags): Promise<string | undefined> {
   return fs.readFile(mapFile, "utf-8");
 }
 
-async function getInputMap(flags: Flags): Promise<IImportMapFile> {
+async function getInputMap(flags: Flags): Promise<IImportMapJspm> {
   const mapPath = getInputPath(flags);
   const file = await getInput(flags);
   if (!file) return {};
@@ -293,7 +294,10 @@ function removeNonStaticEnvKeys(env: string[]) {
 
 function getResolutions(flags: Flags): Record<string, string> {
   if (!flags.resolution) return;
-  const resolutions = flags.resolution.split(",").map((r) => r.trim());
+  const resolutions = Array.isArray(flags.resolution) ?
+    flags.resolution :
+    flags.resolution.split(",").map((r) => r.trim());
+
   return Object.fromEntries(
     resolutions.map((resolution) => {
       if (!resolution.includes("=")) {
@@ -306,6 +310,19 @@ function getResolutions(flags: Flags): Record<string, string> {
       return resolution.split("=");
     })
   );
+}
+
+const validCacheModes = ["online", "offline", "no-cache"];
+function getCacheMode(flags: Flags): "offline" | boolean {
+  if (!flags.cache) return true;
+  if (!validCacheModes.includes(flags.cache))
+    throw new JspmError(
+      `Invalid cache mode "${flags.cache}". Available modes are: "${validCacheModes.join('", "')}".\n\t${c.bold("online")}   Use a locally cached module if available and fresh.\n\t${c.bold("offline")}  Use a locally cached module if available, even if stale.\n\t${c.bold("no-cache")} Never use the local cache.`
+    );
+
+  if (flags.cache === "offline") return "offline";
+  if (flags.cache === "online") return true;
+  return false;
 }
 
 const spinner = ora({ spinner: "dots" });

@@ -61,7 +61,11 @@ const silentOpt: opt = [
   "Silence all output",
   { default: false },
 ];
-
+const cacheOpt: opt = [
+  "--cache <mode>",
+  "Cache mode for fetches (online, offline, no-cache)",
+  { default: "online" },
+];
 
 cli.usage("[command] [options]").option(...silentOpt).version(version).help();
 
@@ -75,6 +79,7 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
+  .option(...cacheOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
@@ -89,6 +94,7 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
+  .option(...cacheOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
@@ -102,6 +108,7 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
+  .option(...cacheOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
@@ -116,6 +123,7 @@ cli
   .option(...envOpt)
   .option(...resolutionOpt)
   .option(...providerOpt)
+  .option(...cacheOpt)
   .option(...integrityOpt)
   .option(...preloadOpt)
   .option(...compactOpt)
