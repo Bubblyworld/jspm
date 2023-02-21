@@ -68,7 +68,11 @@ const rootOpt: opt = [
 ];
 const silentOpt: opt = ["--silent", "Silence all output", { default: false }];
 
-cli.usage("[command] [options]").option(...silentOpt).version(version).help();
+cli
+  .usage("[command] [options]")
+  .option(...silentOpt)
+  .version(version)
+  .help();
 
 cli.command("").action(cli.outputHelp);
 
