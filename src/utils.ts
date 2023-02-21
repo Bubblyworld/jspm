@@ -178,12 +178,18 @@ export async function getGenerator(
   flags: Flags,
   setEnv = true
 ): Promise<Generator> {
+  const log = withType("utils/getGenerator");
+  const mapUrl = getOutputMapUrl(flags);
+  const rootUrl = getRootUrl(flags);
+  const baseUrl = new URL(path.dirname(mapUrl.href));
+  log(`Creating generator with mapUrl ${mapUrl}, baseUrl ${baseUrl}, rootUrl ${rootUrl}`);
+
   return new Generator({
+    mapUrl,
+    baseUrl,
+    rootUrl,
     env: setEnv ? await getEnv(flags) : undefined,
     defaultProvider: getProvider(flags),
-    baseUrl: getBaseUrl(flags),
-    mapUrl: getMapUrl(flags),
-    rootUrl: flags.root,
     resolutions: getResolutions(flags),
     cache: getCacheMode(flags),
   });
@@ -221,10 +227,6 @@ export function getInputPath(flags: Flags): string {
   return path.resolve(process.cwd(), flags.map || defaultInputPath);
 }
 
-function getBaseUrl(flags: Flags): URL {
-  return pathToFileURL(path.dirname(getInputPath(flags)));
-}
-
 export function getOutputPath(flags: Flags): string | undefined {
   return path.resolve(
     process.cwd(),
@@ -232,8 +234,13 @@ export function getOutputPath(flags: Flags): string | undefined {
   );
 }
 
-function getMapUrl(flags: Flags): URL {
+function getOutputMapUrl(flags: Flags): URL {
   return pathToFileURL(getOutputPath(flags));
+}
+
+function getRootUrl(flags: Flags): URL {
+  if (!flags.root) return undefined;
+  return pathToFileURL(path.resolve(process.cwd(), flags.root));
 }
 
 const excludeDefinitions = {

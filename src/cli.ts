@@ -63,7 +63,7 @@ const cacheOpt: opt = [
 ];
 const rootOpt: opt = [
   "--root <url>",
-  "URL to treat as the root of the server",
+  "URL to treat as server root, i.e. rebase import maps against",
   {},
 ];
 const silentOpt: opt = ["--silent", "Silence all output", { default: false }];
