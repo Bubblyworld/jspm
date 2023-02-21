@@ -23,7 +23,7 @@ const defaultHtmlTemplate = `<!DOCTYPE html>
 </html>`;
 
 // Providers that can be used to resolve dependencies:
-const availableProviders = [
+export const availableProviders = [
   "jspm",
   "jspm.system",
   "nodemodules",
