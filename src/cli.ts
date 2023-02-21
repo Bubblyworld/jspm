@@ -66,13 +66,13 @@ const rootOpt: opt = [
   "URL to treat as the root of the server",
   {},
 ];
-const silentOpt: opt = [
-  "--silent",
-  "Silence all output",
-  { default: false }
-];
+const silentOpt: opt = ["--silent", "Silence all output", { default: false }];
 
-cli.usage("[command] [options]").option(...silentOpt).version(version).help();
+cli
+  .usage("[command] [options]")
+  .option(...silentOpt)
+  .version(version)
+  .help();
 
 cli.command("").action(cli.outputHelp);
 

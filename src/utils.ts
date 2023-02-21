@@ -302,9 +302,9 @@ function removeNonStaticEnvKeys(env: string[]) {
 
 function getResolutions(flags: Flags): Record<string, string> {
   if (!flags.resolution) return;
-  const resolutions = Array.isArray(flags.resolution) ?
-    flags.resolution :
-    flags.resolution.split(",").map((r) => r.trim());
+  const resolutions = Array.isArray(flags.resolution)
+    ? flags.resolution
+    : flags.resolution.split(",").map((r) => r.trim());
 
   return Object.fromEntries(
     resolutions.map((resolution) => {
@@ -325,7 +325,15 @@ function getCacheMode(flags: Flags): "offline" | boolean {
   if (!flags.cache) return true;
   if (!validCacheModes.includes(flags.cache))
     throw new JspmError(
-      `Invalid cache mode "${flags.cache}". Available modes are: "${validCacheModes.join('", "')}".\n\t${c.bold("online")}   Use a locally cached module if available and fresh.\n\t${c.bold("offline")}  Use a locally cached module if available, even if stale.\n\t${c.bold("no-cache")} Never use the local cache.`
+      `Invalid cache mode "${
+        flags.cache
+      }". Available modes are: "${validCacheModes.join('", "')}".\n\t${c.bold(
+        "online"
+      )}   Use a locally cached module if available and fresh.\n\t${c.bold(
+        "offline"
+      )}  Use a locally cached module if available, even if stale.\n\t${c.bold(
+        "no-cache"
+      )} Never use the local cache.`
     );
 
   if (flags.cache === "offline") return "offline";
