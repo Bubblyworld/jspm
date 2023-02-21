@@ -50,15 +50,10 @@ const preloadOpt: opt = [
   "--preload",
   "Add module preloads to HTML output",
   { default: false },
-]
+];
 const integrityOpt: opt = [
   "--integrity",
   "Add module preloads with integrity attributes to HTML output",
-  { default: false },
-]
-const silentOpt: opt = [
-  "--silent",
-  "Silence all output",
   { default: false },
 ];
 const cacheOpt: opt = [
@@ -70,6 +65,11 @@ const rootOpt: opt = [
   "--root <url>",
   "URL to treat as the root of the server",
   {},
+];
+const silentOpt: opt = [
+  "--silent",
+  "Silence all output",
+  { default: false }
 ];
 
 cli.usage("[command] [options]").option(...silentOpt).version(version).help();

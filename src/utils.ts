@@ -23,8 +23,14 @@ const defaultHtmlTemplate = `<!DOCTYPE html>
 </html>`;
 
 // Providers that can be used to resolve dependencies:
-const availableProviders = ["jspm", "jspm.system", "nodemodules", "skypack", "jsdelivr", "unpkg"];
-
+const availableProviders = [
+  "jspm",
+  "jspm.system",
+  "nodemodules",
+  "skypack",
+  "jsdelivr",
+  "unpkg",
+];
 
 export class JspmError extends Error {
   jspmError = true;
@@ -60,13 +66,12 @@ export async function writeOutput(
   flags: Flags,
   silent = false
 ) {
-  if (flags.stdout)
-    return writeStdoutOutput(generator, pins, env, silent);
+  if (flags.stdout) return writeStdoutOutput(generator, pins, env, silent);
 
   const mapFile = getOutputPath(flags);
   if (mapFile.endsWith(".html"))
-    return writeHtmlOutput(mapFile, generator, pins, env, flags, silent)
-  return writeJsonOutput(mapFile, generator, pins, env, flags, silent)
+    return writeHtmlOutput(mapFile, generator, pins, env, flags, silent);
+  return writeJsonOutput(mapFile, generator, pins, env, flags, silent);
 }
 
 async function writeStdoutOutput(
@@ -282,7 +287,10 @@ export async function getEnv(flags: Flags) {
 function getProvider(flags: Flags) {
   if (flags.provider && !availableProviders.includes(flags.provider))
     throw new JspmError(
-      `Invalid provider "${flags.provider}". Available providers are: "${availableProviders.join('", "')}".`);
+      `Invalid provider "${
+        flags.provider
+      }". Available providers are: "${availableProviders.join('", "')}".`
+    );
   return flags.provider || "jspm";
 }
 
