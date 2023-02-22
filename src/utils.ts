@@ -156,6 +156,7 @@ async function writeJsonOutput(
     map = generator.getMap();
   }
   map = { env, ...map };
+  log(`${JSON.stringify(map, null, 2)}`);
 
   // Don't write an output file without permission:
   if (!(await canWrite(mapFile)))
