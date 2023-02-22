@@ -183,7 +183,9 @@ export async function getGenerator(
   const mapUrl = getOutputMapUrl(flags);
   const rootUrl = getRootUrl(flags);
   const baseUrl = new URL(path.dirname(mapUrl.href));
-  log(`Creating generator with mapUrl ${mapUrl}, baseUrl ${baseUrl}, rootUrl ${rootUrl}`);
+  log(
+    `Creating generator with mapUrl ${mapUrl}, baseUrl ${baseUrl}, rootUrl ${rootUrl}`
+  );
 
   return new Generator({
     mapUrl,
